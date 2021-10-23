@@ -7,6 +7,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class PerfectLinks extends Thread {
@@ -20,6 +22,7 @@ public class PerfectLinks extends Thread {
 
     // TODO: DOES BUFFER SIZE NEED TO BE BIGGER?
     private byte[] buf = new byte[256];
+    HashMap<InetSocketAddress, ArrayList<String>> delivered = new HashMap<InetSocketAddress, ArrayList<String>>();
 
     public PerfectLinks(Host me, List<Config> configs, List<Host> hosts) {
         this.me = me;
@@ -88,6 +91,7 @@ public class PerfectLinks extends Thread {
         running = true;
 
         while (running) {
+            // Receive Packet
             DatagramPacket packet = new DatagramPacket(buf, buf.length);
             try {
                 socket.receive(packet);
@@ -101,18 +105,15 @@ public class PerfectLinks extends Thread {
             packet = new DatagramPacket(buf, buf.length, address, port);
             String message = new String(packet.getData(), 0, packet.getLength()).trim();
 
+            // Add packet to delivered
+            InetSocketAddress from = new InetSocketAddress(address, port);
 
-            System.out.printf("Received %s\n", message);
-            
-
-            int id = getHostByAddress(address, port).getId();
-            System.out.printf("ID: %d\n", id);
-            System.out.printf("MESSAGE: %s\n", message);
-            System.out.printf("FORMATTED: %sd %s %s\n", output, Integer.toString(id), message);
-            output = String.format("%s d %s %s\n", output, Integer.toString(id), message);
-
-            // TODO: Log packet
-            System.out.printf("Output: \n%s\n", output);
+            if (!isMessageInDelivered(from, message)) {
+                // If message has not been delivered, deliver message
+                System.out.printf("Received %s\n", message);
+                int id = getHostByAddress(address, port).getId();
+                output = String.format("%s d %s %s\n", output, Integer.toString(id), message);
+            }
         }
     }
 
@@ -144,5 +145,32 @@ public class PerfectLinks extends Thread {
         }
 
         return null;
+    }
+
+    /**
+     * Checks if message in delivered
+     * If not in delivered, adds to delivered
+     * @param from
+     * @param message
+     * @return boolean
+     */
+    private boolean isMessageInDelivered(InetSocketAddress from, String message) {
+        ArrayList<String> msgList = delivered.get(from);
+
+        if(msgList == null) {
+            // If no messages in delivered, create list
+            msgList = new ArrayList<String>();
+            msgList.add(message);
+            delivered.put(from, msgList);
+            return false;
+        } else {
+            // If messages in delivered, make sure not a duplicate
+            if(!msgList.contains(message)) {
+                msgList.add(message);
+                return false;
+            } 
+        }
+
+        return true;
     }
 }
