@@ -1,5 +1,7 @@
 package cs451;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -11,21 +13,31 @@ import java.net.SocketException;
 import java.util.List;
 
 public class Main {
-    private static String output = ""; 
+    private static void writeOutput(String output, String filename) {
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(filename));
+            writer.write(output);
+            writer.close();
+        } catch (IOException e) {
+            System.err.println("Cannot Write to Output File: " + e);
+        }
+    }
 
-    private static void handleSignal() {
+    private static void handleSignal(PerfectLinks pl, String filename) {
         //immediately stop network packet processing
         System.out.println("Immediately stopping network packet processing.");
+        String output = pl.close();
 
         //write/flush output file if necessary
         System.out.println("Writing output.");
+        writeOutput(output, filename);
     }
 
-    private static void initSignalHandlers() {
+    private static void initSignalHandlers(PerfectLinks pl, String filename) {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                handleSignal();
+                handleSignal(pl, filename);
             }
         });
     }
@@ -34,7 +46,7 @@ public class Main {
         Parser parser = new Parser(args);
         parser.parse();
 
-        initSignalHandlers();
+        // initSignalHandlers();
 
         // example
         long pid = ProcessHandle.current().pid();
@@ -75,48 +87,20 @@ public class Main {
         System.out.println();
 
         System.out.println("Doing some initialization\n");
-        // TODO: Need initialization here?
-        // STEPS
-        // ----> 1. DONE: Determine n/i from parser.config()
-        // ----> 2. Determine from Hosts the ip/port (kinda already done)
+        PerfectLinks pl = new PerfectLinks(me, configs, hosts);
+        initSignalHandlers(pl, parser.output());
 
         System.out.println("Broadcasting and delivering messages...\n");
-        
-        // TODO: SEND MESSAGES WITH UDP
-        // Send(address, number of messages)?
-        // HOW DEAL WITH PACKET LOSS?
 
         // *********************************************************************
-        // SEND MESSAGES
+        // SEND AND RECEIVE MESSAGES
         // *********************************************************************
-        // Step 1:Create the socket object for carrying the data.
+        pl.start();
+        pl.sendAll();
 
-        // CREATE MY SOCKET
-        // Create datagram socket with ip and port
-        DatagramSocket socket = null;
-        InetSocketAddress address = new InetSocketAddress(me.getIp(), me.getPort());
-        try {
-            socket = new DatagramSocket(address);
-            socket.setSoTimeout(1000); 
-        } catch(SocketException e) {
-            System.err.println("Main - Cannot Create Socket: " + e);
-        }
-
-        // *********************************************************************
-        // SERVER
-        // *********************************************************************
-        Server server = new Server(socket, output);
-        server.start();
-
-        // *********************************************************************
-        // CLIENT
-        // *********************************************************************
-        Client client = new Client(me, socket, configs, hosts, output);
-        client.sendAll();
-
-        System.out.println("AFTER CLIENT");
-        System.out.println("OUTPUT");
-        System.out.printf("%s\n", output);
+        // System.out.println("AFTER CLIENT");
+        // System.out.println("OUTPUT");
+        // System.out.printf("%s\n", output);
         // *********************************************************************
 
         // After a process finishes broadcasting,
