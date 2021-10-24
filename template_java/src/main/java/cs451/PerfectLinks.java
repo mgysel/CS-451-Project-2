@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class PerfectLinks extends Thread {
     private Host me;
@@ -28,6 +29,8 @@ public class PerfectLinks extends Thread {
     HashMap<InetSocketAddress, ArrayList<String>> sent = new HashMap<InetSocketAddress, ArrayList<String>>();
     HashMap<InetSocketAddress, ArrayList<String>> messages = new HashMap<InetSocketAddress, ArrayList<String>>();
     HashMap<InetSocketAddress, ArrayList<String>> ack = new HashMap<InetSocketAddress, ArrayList<String>>();
+
+    private final ReentrantReadWriteLock outputLock = new ReentrantReadWriteLock();
 
     public PerfectLinks(Host me, List<Config> configs, List<Host> hosts) {
         this.me = me;
@@ -65,8 +68,9 @@ public class PerfectLinks extends Thread {
     }
 
     public boolean send(InetSocketAddress address, String message) {
-        System.out.println("INSIDE SEND");
-        System.out.printf("Sending: %s\n", message);
+        // System.out.println("INSIDE SEND");
+        // System.out.printf("Sending: %s\n", message);
+
         Arrays.fill(outBuf,(byte)0);
         // outBuf = new byte[256];
         outBuf = message.getBytes();
@@ -89,7 +93,6 @@ public class PerfectLinks extends Thread {
             System.err.println("Client.Send Error: " + e);
             return false;
         }
-        
         return true;
     }
 
@@ -130,6 +133,7 @@ public class PerfectLinks extends Thread {
         Boolean[] firstBroadcastI = new Boolean[maxMessages + 1];
         Arrays.fill(firstBroadcastI, Boolean.TRUE);
         while (!doesAckEqualMessages(ack, messages)) {
+            // System.out.println("ACK does not equal messages");
             int i = 1;
             while (i <= maxMessages) {
                 for (Config config: configs) {
@@ -141,7 +145,9 @@ public class PerfectLinks extends Thread {
                             // System.out.println("INSIDE SENDALL");
                             // System.out.printf("Sending %s\n", message);
                             if (firstBroadcastI[i] && firstBroadcastRound) {
+                                outputLock.writeLock().lock();
                                 output = String.format("%sb %s\n", output, message);
+                                outputLock.writeLock().unlock();
                                 firstBroadcastI[i] = false;
                             }
                             send(address, message);
@@ -149,6 +155,7 @@ public class PerfectLinks extends Thread {
                         
                     }
                 }
+                
                 i++;
             }
             firstBroadcastRound = false;
@@ -184,19 +191,21 @@ public class PerfectLinks extends Thread {
                     // If message not an ack, put in delivered
                     if (putMessageInMap(delivered, from, message)) {
                         // If message has not been delivered, deliver message
-                        System.out.printf("Received %s\n", message);
+                        // System.out.printf("Received %s\n", message);
                         int id = getHostByAddress(address, port).getId();
+                        outputLock.writeLock().lock();
                         output = String.format("%sd %s %s\n", output, Integer.toString(id), message);
+                        outputLock.writeLock().unlock();
                     }
                     // Send ack back, even if already delivered
-                    System.out.printf("This is what I am sending back: %s\n", String.format("ACK/%s", message));
+                    // System.out.printf("This is what I am sending back: %s\n", String.format("ACK/%s", message));
                     send(from, String.format("ACK/%s", message));
                 } else {
                     // Process ACK
                     if (message.split("/").length > 1) {
                         if (!message.split("/")[1].equals("")) {
-                            System.out.printf("Message Length: %s\n", message.split("/").length);
-                            System.out.printf("This is what I am putting in ACK: %s\n", message.split("/")[1]);
+                            // System.out.printf("Message Length: %s\n", message.split("/").length);
+                            // System.out.printf("This is what I am putting in ACK: %s\n", message.split("/")[1]);
                             putMessageInMap(ack, from, message.split("/")[1]);
                         }
                     }
@@ -208,6 +217,7 @@ public class PerfectLinks extends Thread {
             } catch (IOException e) {
                 System.err.println("Server Cannot Receive Packet: " + e);
             }
+
 
         }
     }
