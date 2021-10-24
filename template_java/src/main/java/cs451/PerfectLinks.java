@@ -71,8 +71,8 @@ public class PerfectLinks extends Thread {
         // System.out.println("INSIDE SEND");
         // System.out.printf("Sending: %s\n", message);
 
-        Arrays.fill(outBuf,(byte)0);
-        // outBuf = new byte[256];
+        // Arrays.fill(outBuf,(byte)0);
+        outBuf = new byte[256];
         outBuf = message.getBytes();
 
         DatagramPacket packet = new DatagramPacket(outBuf, outBuf.length, address);
@@ -210,8 +210,8 @@ public class PerfectLinks extends Thread {
                         }
                     }
                 }
-                // inBuf = new byte[256];
-                Arrays.fill(inBuf,(byte)0);
+                inBuf = new byte[256];
+                // Arrays.fill(inBuf,(byte)0);
             } catch (SocketTimeoutException e) {
                 continue;
             } catch (IOException e) {
