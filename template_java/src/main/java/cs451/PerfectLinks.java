@@ -75,7 +75,7 @@ public class PerfectLinks extends Thread {
         outBuf = new byte[256];
         outBuf = message.getBytes();
 
-        DatagramPacket packet = new DatagramPacket(outBuf, outBuf.length, address);
+        DatagramPacket packet = new DatagramPacket(outBuf, 0, outBuf.length, address);
 
         try {
             socket.send(packet);
