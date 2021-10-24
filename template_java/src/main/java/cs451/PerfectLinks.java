@@ -45,7 +45,7 @@ public class PerfectLinks extends Thread {
             System.err.println("Cannot Create Socket: " + e);
         }
 
-        // Initialize messages with messages
+        // Initialize messages with messages to send
         for (Config config: configs) {
             if (config.getId() != me.getId()) {
                 Host receiver = getHostById(config.getId());
@@ -80,7 +80,7 @@ public class PerfectLinks extends Thread {
                 if (putMessageInMap(sent, address, message)) {
                     // System.out.println("We have not put the message in the map");
                     // If message not yet sent, write to output
-                    output = String.format("%sb %s\n", output, message);
+                    // output = String.format("%sb %s\n", output, message);
                     // System.out.println("OUTPUT");
                     // System.out.printf("%s\n", output);
                 }
@@ -99,30 +99,59 @@ public class PerfectLinks extends Thread {
      */
     public void sendAll() {
         
+        // // Send messages until we receive all acks
+        // while (!doesAckEqualMessages(ack, messages)) {
+        //     // System.out.println("Ack does not equal sent");
+        //     // Loop through configs, get receiver address
+        //     for (Config config: configs) {
+        //         if (config.getId() != me.getId()) {
+        //             Host receiver = getHostById(config.getId());
+        //             InetSocketAddress address = new InetSocketAddress(receiver.getIp(), receiver.getPort());
+        
+        //             // Send number of messages
+        //             int i = 1;
+        //             while (i <= config.getM()) {
+        //                 // Only send if it is not in ack
+        //                 String message = Integer.toString(i);
+        //                 if (!isMessageInMap(ack, address, message)) {
+        //                     // System.out.println("INSIDE SENDALL");
+        //                     // System.out.printf("Sending %s\n", message);
+        //                     send(address, message);
+        //                 }
+        //                 i++;
+        //             }
+        //         }
+        //     }
+        // }
+
         // Send messages until we receive all acks
+        boolean firstBroadcastRound = true;
+        int maxMessages = getMaxMessages(configs);
+        Boolean[] firstBroadcastI = new Boolean[maxMessages + 1];
+        Arrays.fill(firstBroadcastI, Boolean.TRUE);
         while (!doesAckEqualMessages(ack, messages)) {
-            // System.out.println("Ack does not equal sent");
-            // Loop through configs, get receiver address
-            for (Config config: configs) {
-                if (config.getId() != me.getId()) {
+            int i = 1;
+            while (i <= maxMessages) {
+                for (Config config: configs) {
                     Host receiver = getHostById(config.getId());
                     InetSocketAddress address = new InetSocketAddress(receiver.getIp(), receiver.getPort());
-        
-                    // Send number of messages
-                    int i = 1;
-                    while (i <= config.getM()) {
-                        // Only send if it is not in ack
+                    if (config.getId() != me.getId() && i <= config.getM()) {
                         String message = Integer.toString(i);
                         if (!isMessageInMap(ack, address, message)) {
                             // System.out.println("INSIDE SENDALL");
                             // System.out.printf("Sending %s\n", message);
-                            send(address, Integer.toString(i));
+                            if (firstBroadcastI[i] && firstBroadcastRound) {
+                                output = String.format("%sb %s\n", output, message);
+                                firstBroadcastI[i] = false;
+                            }
+                            send(address, message);
                         }
-                        i++;
+                        
                     }
                 }
+                i++;
             }
-           //  System.out.println("Starting while loop again");
+            firstBroadcastRound = false;
         }
         System.out.println("Ack equals sent");
     }
@@ -171,18 +200,6 @@ public class PerfectLinks extends Thread {
                             putMessageInMap(ack, from, message.split("/")[1]);
                         }
                     }
-                    
-                    // if (message.split("/").length > 1) {
-                        
-                    //     if (!message.split("/")[1].equals("")) {
-                            
-                    //     }
-                    // }
-                    // // if (message.split("ACK/").length >= 2) {
-                    // //     System.out.printf("This is what I am putting in ACK: %s\n", message.split("/")[1]);
-                    // //     putMessageInMap(ack, from, message.split("/")[1]);
-                    // // }
-                    
                 }
                 // inBuf = new byte[256];
                 Arrays.fill(inBuf,(byte)0);
@@ -297,6 +314,17 @@ public class PerfectLinks extends Thread {
 
         return true;
                 
+    }
+
+    private int getMaxMessages(List<Config> configs) {
+        int maxMessages = 0;
+        for (Config config: configs) {
+            int configMessages = config.getM();
+            if (config.getM() > maxMessages) {
+                maxMessages = configMessages;
+            }
+        }
+        return maxMessages;
     }
 
 
