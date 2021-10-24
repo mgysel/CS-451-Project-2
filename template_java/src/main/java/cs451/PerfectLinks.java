@@ -65,8 +65,8 @@ public class PerfectLinks extends Thread {
     }
 
     public boolean send(InetSocketAddress address, String message) {
-        // System.out.println("INSIDE SEND");
-        // System.out.printf("Sending: %s\n", message);
+        System.out.println("INSIDE SEND");
+        System.out.printf("Sending: %s\n", message);
         Arrays.fill(outBuf,(byte)0);
         // outBuf = new byte[256];
         outBuf = message.getBytes();
@@ -78,11 +78,11 @@ public class PerfectLinks extends Thread {
             if (!message.contains("ACK/")) {
                 // If not an ACK, Put message in sent map
                 if (putMessageInMap(sent, address, message)) {
-                    System.out.println("We have not put the message in the map");
+                    // System.out.println("We have not put the message in the map");
                     // If message not yet sent, write to output
                     output = String.format("%sb %s\n", output, message);
-                    System.out.println("OUTPUT");
-                    System.out.printf("%s\n", output);
+                    // System.out.println("OUTPUT");
+                    // System.out.printf("%s\n", output);
                 }
             }
         } catch(IOException e) {
@@ -158,23 +158,30 @@ public class PerfectLinks extends Thread {
                         System.out.printf("Received %s\n", message);
                         int id = getHostByAddress(address, port).getId();
                         output = String.format("%sd %s %s\n", output, Integer.toString(id), message);
-                        // Send ack back
-                        System.out.printf("This is what I am sending back: %s\n", String.format("ACK/%s", message));
-                        send(from, String.format("ACK/%s", message));
                     }
+                    // Send ack back, even if already delivered
+                    System.out.printf("This is what I am sending back: %s\n", String.format("ACK/%s", message));
+                    send(from, String.format("ACK/%s", message));
                 } else {
                     // Process ACK
                     if (message.split("/").length > 1) {
-                        System.out.printf("Message Length: %s\n", message.split("/").length);
-                        System.out.printf("This is what I am putting in ACK: %s\n", message.split("/")[1]);
                         if (!message.split("/")[1].equals("")) {
+                            System.out.printf("Message Length: %s\n", message.split("/").length);
+                            System.out.printf("This is what I am putting in ACK: %s\n", message.split("/")[1]);
                             putMessageInMap(ack, from, message.split("/")[1]);
                         }
                     }
-                    // if (message.split("ACK/").length >= 2) {
-                    //     System.out.printf("This is what I am putting in ACK: %s\n", message.split("/")[1]);
-                    //     putMessageInMap(ack, from, message.split("/")[1]);
+                    
+                    // if (message.split("/").length > 1) {
+                        
+                    //     if (!message.split("/")[1].equals("")) {
+                            
+                    //     }
                     // }
+                    // // if (message.split("ACK/").length >= 2) {
+                    // //     System.out.printf("This is what I am putting in ACK: %s\n", message.split("/")[1]);
+                    // //     putMessageInMap(ack, from, message.split("/")[1]);
+                    // // }
                     
                 }
                 // inBuf = new byte[256];
