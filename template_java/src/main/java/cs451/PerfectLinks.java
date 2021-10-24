@@ -8,6 +8,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -21,9 +22,11 @@ public class PerfectLinks extends Thread {
     private boolean running;
 
     // TODO: DOES BUFFER SIZE NEED TO BE BIGGER?
-    private byte[] buf = new byte[256];
+    private byte[] inBuf = new byte[256];
+    private byte[] outBuf = new byte[256];
     HashMap<InetSocketAddress, ArrayList<String>> delivered = new HashMap<InetSocketAddress, ArrayList<String>>();
     HashMap<InetSocketAddress, ArrayList<String>> sent = new HashMap<InetSocketAddress, ArrayList<String>>();
+    HashMap<InetSocketAddress, ArrayList<String>> messages = new HashMap<InetSocketAddress, ArrayList<String>>();
     HashMap<InetSocketAddress, ArrayList<String>> ack = new HashMap<InetSocketAddress, ArrayList<String>>();
 
     public PerfectLinks(Host me, List<Config> configs, List<Host> hosts) {
@@ -41,19 +44,41 @@ public class PerfectLinks extends Thread {
         } catch(SocketException e) {
             System.err.println("Cannot Create Socket: " + e);
         }
+
+        // Initialize messages with messages
+        for (Config config: configs) {
+            if (config.getId() != me.getId()) {
+                Host receiver = getHostById(config.getId());
+                InetSocketAddress receiveAddress = new InetSocketAddress(receiver.getIp(), receiver.getPort());
+
+                // Add messages to messages map
+                int i = 1;
+                while (i <= config.getM()) {
+                    // Put each message in map
+                    String message = Integer.toString(i);
+                    putMessageInMap(messages, receiveAddress, message);
+                    i++;
+                }
+            }
+        }
+
     }
 
     public boolean send(InetSocketAddress address, String message) {
-        System.out.println("INSIDE SEND\n");
-        buf = message.getBytes();
+        // System.out.println("INSIDE SEND");
+        // System.out.printf("Sending: %s\n", message);
+        Arrays.fill(outBuf,(byte)0);
+        // outBuf = new byte[256];
+        outBuf = message.getBytes();
 
-        DatagramPacket packet = new DatagramPacket(buf, buf.length, address);
+        DatagramPacket packet = new DatagramPacket(outBuf, outBuf.length, address);
 
         try {
             socket.send(packet);
             if (!message.contains("ACK/")) {
                 // If not an ACK, Put message in sent map
                 if (putMessageInMap(sent, address, message)) {
+                    System.out.println("We have not put the message in the map");
                     // If message not yet sent, write to output
                     output = String.format("%sb %s\n", output, message);
                     System.out.println("OUTPUT");
@@ -73,10 +98,10 @@ public class PerfectLinks extends Thread {
      * Do not send messages to self
      */
     public void sendAll() {
-        System.out.println("INSIDE SENDALL");
         
         // Send messages until we receive all acks
-        while (!ack.equals(sent)) {
+        while (!doesAckEqualMessages(ack, messages)) {
+            // System.out.println("Ack does not equal sent");
             // Loop through configs, get receiver address
             for (Config config: configs) {
                 if (config.getId() != me.getId()) {
@@ -88,16 +113,18 @@ public class PerfectLinks extends Thread {
                     while (i <= config.getM()) {
                         // Only send if it is not in ack
                         String message = Integer.toString(i);
-                        if (isMessageInMap(ack, address, message)) {
-                            System.out.printf("Sending %d\n", message);
+                        if (!isMessageInMap(ack, address, message)) {
+                            // System.out.println("INSIDE SENDALL");
+                            // System.out.printf("Sending %s\n", message);
+                            send(address, Integer.toString(i));
                         }
-
-                        send(address, Integer.toString(i));
                         i++;
                     }
                 }
             }
+           //  System.out.println("Starting while loop again");
         }
+        System.out.println("Ack equals sent");
     }
 
     // NOTE: start is used to run a thread asynchronously
@@ -108,34 +135,56 @@ public class PerfectLinks extends Thread {
 
         while (running) {
             // Receive Packet
-            DatagramPacket packet = new DatagramPacket(buf, buf.length);
+            DatagramPacket packet = new DatagramPacket(inBuf, inBuf.length);
             try {
+                packet.setLength(inBuf.length);
                 socket.receive(packet);
+
+                InetAddress address = packet.getAddress();
+                int port = packet.getPort();
+                packet = new DatagramPacket(inBuf, inBuf.length, address, port);
+                
+                String message = new String(packet.getData(), packet.getOffset(),  packet.getLength()).trim();
+                // System.out.printf("PACKET LENGTH: %s\n", packet.getLength());
+                // System.out.printf("MESSAGE LENGTH: %s\n", message.length());
+                // Clear buffer after processing it
+    
+                InetSocketAddress from = new InetSocketAddress(address, port);
+                // System.out.printf("RECEIVED MESSAGE: %s\n", message);
+                if (!message.contains("ACK/")) {
+                    // If message not an ack, put in delivered
+                    if (putMessageInMap(delivered, from, message)) {
+                        // If message has not been delivered, deliver message
+                        System.out.printf("Received %s\n", message);
+                        int id = getHostByAddress(address, port).getId();
+                        output = String.format("%sd %s %s\n", output, Integer.toString(id), message);
+                        // Send ack back
+                        System.out.printf("This is what I am sending back: %s\n", String.format("ACK/%s", message));
+                        send(from, String.format("ACK/%s", message));
+                    }
+                } else {
+                    // Process ACK
+                    if (message.split("/").length > 1) {
+                        System.out.printf("Message Length: %s\n", message.split("/").length);
+                        System.out.printf("This is what I am putting in ACK: %s\n", message.split("/")[1]);
+                        if (!message.split("/")[1].equals("")) {
+                            putMessageInMap(ack, from, message.split("/")[1]);
+                        }
+                    }
+                    // if (message.split("ACK/").length >= 2) {
+                    //     System.out.printf("This is what I am putting in ACK: %s\n", message.split("/")[1]);
+                    //     putMessageInMap(ack, from, message.split("/")[1]);
+                    // }
+                    
+                }
+                // inBuf = new byte[256];
+                Arrays.fill(inBuf,(byte)0);
             } catch (SocketTimeoutException e) {
                 continue;
             } catch (IOException e) {
                 System.err.println("Server Cannot Receive Packet: " + e);
             }
-            InetAddress address = packet.getAddress();
-            int port = packet.getPort();
-            packet = new DatagramPacket(buf, buf.length, address, port);
-            String message = new String(packet.getData(), 0, packet.getLength()).trim();
 
-            InetSocketAddress from = new InetSocketAddress(address, port);
-            if (!message.contains("ACK/")) {
-                // If message not an ack, put in delivered
-                if (!putMessageInMap(delivered, from, message)) {
-                    // If message has not been delivered, deliver message
-                    System.out.printf("Received %s\n", message);
-                    int id = getHostByAddress(address, port).getId();
-                    output = String.format("%s d %s %s\n", output, Integer.toString(id), message);
-                }
-                // Send ack back
-                send(from, String.format("ACK/%s", message));
-            } else {
-                // Process ACK
-                putMessageInMap(ack, from, message.split("/")[1]);
-            }
         }
     }
 
@@ -177,6 +226,10 @@ public class PerfectLinks extends Thread {
      * @return boolean
      */
     private boolean putMessageInMap(HashMap<InetSocketAddress, ArrayList<String>> map, InetSocketAddress from, String message) {
+        if (message.equals("")) {
+            return false;
+        }
+        
         ArrayList<String> msgList = map.get(from);
 
         if(msgList == null) {
@@ -184,16 +237,16 @@ public class PerfectLinks extends Thread {
             msgList = new ArrayList<String>();
             msgList.add(message);
             map.put(from, msgList);
-            return false;
+            return true;
         } else {
             // If messages in delivered, make sure not a duplicate
             if(!msgList.contains(message)) {
                 msgList.add(message);
-                return false;
+                return true;
             } 
         }
 
-        return true;
+        return false;
     }
 
     private boolean isMessageInMap(HashMap<InetSocketAddress, ArrayList<String>> map, InetSocketAddress from, String message) {
@@ -211,4 +264,33 @@ public class PerfectLinks extends Thread {
 
         return false;
     }
+
+    private boolean doesAckEqualMessages(HashMap<InetSocketAddress, ArrayList<String>> ack, HashMap<InetSocketAddress, ArrayList<String>> messages) {
+        // Loop through configs, get receiver address
+        for (Config config: configs) {
+            if (config.getId() != me.getId()) {
+                Host receiver = getHostById(config.getId());
+                InetSocketAddress receiverAddress = new InetSocketAddress(receiver.getIp(), receiver.getPort());
+
+                ArrayList<String> ackList = ack.get(receiverAddress);
+                ArrayList<String> messageList = messages.get(receiverAddress);
+
+                if(ackList == null) {
+                    // If no messages, not in list
+                    return false;
+                } else {
+                    for (String message: messageList) {
+                        if (!ackList.contains(message)) {
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+
+        return true;
+                
+    }
+
+
 }
