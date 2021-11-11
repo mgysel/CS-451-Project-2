@@ -102,31 +102,6 @@ public class PerfectLinks extends Thread {
      */
     public void sendAll() {
         
-        // // Send messages until we receive all acks
-        // while (!doesAckEqualMessages(ack, messages)) {
-        //     // System.out.println("Ack does not equal sent");
-        //     // Loop through configs, get receiver address
-        //     for (Config config: configs) {
-        //         if (config.getId() != me.getId()) {
-        //             Host receiver = getHostById(config.getId());
-        //             InetSocketAddress address = new InetSocketAddress(receiver.getIp(), receiver.getPort());
-        
-        //             // Send number of messages
-        //             int i = 1;
-        //             while (i <= config.getM()) {
-        //                 // Only send if it is not in ack
-        //                 String message = Integer.toString(i);
-        //                 if (!isMessageInMap(ack, address, message)) {
-        //                     // System.out.println("INSIDE SENDALL");
-        //                     // System.out.printf("Sending %s\n", message);
-        //                     send(address, message);
-        //                 }
-        //                 i++;
-        //             }
-        //         }
-        //     }
-        // }
-
         // Send messages until we receive all acks
         boolean firstBroadcastRound = true;
         int maxMessages = getMaxMessages(configs);

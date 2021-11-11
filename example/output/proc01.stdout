@@ -1,0 +1,47 @@
+My PID: 91183
+
+From a new terminal type `kill -SIGINT 91183` or `kill -SIGTERM 91183` to stop processing packets
+
+My ID: 1
+
+List of resolved hosts is:
+==========================
+1
+Human-readable IP: 127.0.0.1
+Human-readable Port: 11001
+
+2
+Human-readable IP: 127.0.0.1
+Human-readable Port: 11002
+
+3
+Human-readable IP: 127.0.0.1
+Human-readable Port: 11003
+
+4
+Human-readable IP: 127.0.0.1
+Human-readable Port: 11004
+
+
+Path to output:
+===============
+/Users/michaelgysel/My Drive/Classes/CURRENT - S1 2021/CS-451 - Distributed Algorithms/new/CS-451-Project-0/example/output/proc01.output
+
+Path to config:
+===============
+../example/output/config
+
+List of configs is:
+==========================
+1
+M: 10
+
+
+Doing some initialization
+
+Broadcasting and delivering messages...
+
+INSIDE RUN
+Ack equals sent
+Immediately stopping network packet processing.
+Writing output.
