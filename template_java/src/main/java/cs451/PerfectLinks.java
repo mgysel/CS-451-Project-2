@@ -50,13 +50,6 @@ public class PerfectLinks extends Thread {
             System.err.println("Cannot Create Socket: " + e);
         }
 
-        // Initialize peers from hosts (remove me)
-        for (Host host: hosts) {
-            if (host.getId() != me.getId()) {
-                peers.add(host);
-            }
-        }
-
         // Initialize messages with messages to send
         for (Config config: configs) {
             if (config.getId() != me.getId()) {
@@ -95,12 +88,11 @@ public class PerfectLinks extends Thread {
             if (!m.contains("ACK/")) {
                 putMessageInMap(sent, dest, m);
             }
-
-            return true;
         } catch(IOException e) {
             System.err.println("Client.Send Error: " + e);
             return false;
         }
+        return true;
     }
 
     /**
@@ -167,8 +159,9 @@ public class PerfectLinks extends Thread {
                 // Clear buffer after processing it
     
                 int id = getHostByAddress(address, port).getId();
-                System.out.printf("RECEIVED MESSAGE: %s\n", message);
+                // System.out.printf("RECEIVED MESSAGE: %s\n", message);
                 if (!message.contains("ACK/")) {
+                    // System.out.println("About to deliver message");
                     deliver(id, message);
 
                     // Send ack back, even if already delivered
@@ -325,6 +318,7 @@ public class PerfectLinks extends Thread {
             // If message has not been delivered, deliver message
             deliver(src, m);
             writeDeliver(src, m);
+            listener.PerfectLinksDeliver(src, m);
         }
     }
 
