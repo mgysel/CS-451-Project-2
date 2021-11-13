@@ -1,6 +1,7 @@
 package cs451;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
 public class Host {
@@ -10,6 +11,7 @@ public class Host {
     private int id;
     private String ip;
     private int port = -1;
+    InetSocketAddress address;
 
     public boolean populate(String idString, String ipString, String portString) {
         try {
@@ -27,6 +29,8 @@ public class Host {
                 System.err.println("Port in the hosts file must be a positive number!");
                 return false;
             }
+
+            address = new InetSocketAddress(ip, port);
         } catch (NumberFormatException e) {
             if (port == -1) {
                 System.err.println("Id in the hosts file must be a number!");
@@ -51,6 +55,10 @@ public class Host {
 
     public int getPort() {
         return port;
+    }
+
+    public InetSocketAddress getAddress() {
+        return address;
     }
 
 }

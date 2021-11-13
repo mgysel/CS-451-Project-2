@@ -3,14 +3,13 @@ package cs451;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.lang.NumberFormatException;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-public class ConfigParser {
+public class PLConfigParser {
 
     private String path;
     private static final String SPACES_REGEX = "\\s+";
@@ -35,12 +34,16 @@ public class ConfigParser {
                     return false;
                 } 
 
-                Config newConfig = new Config();
-
-                if (!newConfig.populate(splits[0], splits[1])) {
+                int m, id;
+                try {
+                    m = Integer.parseInt(splits[0]);
+                    id = Integer.parseInt(splits[1]);
+                } catch (NumberFormatException e) {
+                    System.err.println("Id and m in the hosts file must be an integer!");
                     return false;
-                }
+                } 
 
+                Config newConfig = new Config(m, id);
                 configs.add(newConfig);
             }
         } catch (IOException e) {

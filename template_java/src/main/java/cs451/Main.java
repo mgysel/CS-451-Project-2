@@ -3,6 +3,7 @@ package cs451;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
@@ -16,7 +17,7 @@ public class Main {
         }
     }
 
-    private static void handleSignal(PerfectLinks pl, String filename) {
+    private static void handleSignal(PerfectLinks pl, BestEffortBroadcast beb, String filename) {
         //immediately stop network packet processing
         System.out.println("Immediately stopping network packet processing.");
         String output = pl.close();
@@ -26,11 +27,11 @@ public class Main {
         writeOutput(output, filename);
     }
 
-    private static void initSignalHandlers(PerfectLinks pl, String filename) {
+    private static void initSignalHandlers(PerfectLinks pl, BestEffortBroadcast beb, String filename) {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                handleSignal(pl, filename);
+                handleSignal(pl, beb, filename);
             }
         });
     }
@@ -66,12 +67,39 @@ public class Main {
         System.out.println("===============");
         System.out.println(parser.output() + "\n");
 
+        // *************************************************************
+        // PerfectLinks Configuration
+        // *************************************************************
+        // System.out.println("Path to config:");
+        // System.out.println("===============");
+        // System.out.println(parser.plConfigPath() + "\n");
+        // System.out.println("List of configs is:");
+        // System.out.println("==========================");
+        // List<Config> configs = parser.plConfigConfigs();
+        // for (Config config: configs) {
+        //     System.out.println(config.getId());
+        //     System.out.println("M: " + config.getM());
+        //     System.out.println();
+        // }
+        // System.out.println();
+
+        // *************************************************************
+        // BestEfforBroadcast Configuration
+        // *************************************************************
         System.out.println("Path to config:");
         System.out.println("===============");
-        System.out.println(parser.config() + "\n");
+        System.out.println(parser.bebConfigPath() + "\n");
         System.out.println("List of configs is:");
         System.out.println("==========================");
-        List<Config> configs = parser.configs();
+        
+        // Loop through hosts and build a configuration file
+        List<Config> configs = new ArrayList<Config>();
+        int m = parser.bebConfigM();
+        for (Host host: hosts) {
+            Config newConfig = new Config(m, host.getId());
+            configs.add(newConfig);
+        }
+        // Print output of configuration
         for (Config config: configs) {
             System.out.println(config.getId());
             System.out.println("M: " + config.getM());
@@ -79,9 +107,12 @@ public class Main {
         }
         System.out.println();
 
+
         System.out.println("Doing some initialization\n");
         PerfectLinks pl = new PerfectLinks(me, configs, hosts);
-        initSignalHandlers(pl, parser.output());
+        // initSignalHandlers(pl, parser.output());
+        BestEffortBroadcast beb = new BestEffortBroadcast(pl);
+        initSignalHandlers(pl, beb, parser.output());
 
         System.out.println("Broadcasting and delivering messages...\n");
 
@@ -90,10 +121,9 @@ public class Main {
         // *********************************************************************
         pl.start();
         pl.sendAll();
+        // beb.start();
+        // beb.broadcast();
 
-        // System.out.println("AFTER CLIENT");
-        // System.out.println("OUTPUT");
-        // System.out.printf("%s\n", output);
         // *********************************************************************
 
         // After a process finishes broadcasting,

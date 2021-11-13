@@ -6,6 +6,11 @@ public class Config {
     // Index of process
     private int id;
 
+    public Config(int m, int id) {
+        this.m = m;
+        this.id = id;
+    }
+
     public boolean populate(String mString, String idString) {
         try {
             m = Integer.parseInt(mString);
