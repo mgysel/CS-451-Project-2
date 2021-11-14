@@ -9,7 +9,6 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -21,15 +20,16 @@ public class PerfectLinks extends Thread {
     private List<Host> peers;
     private String output;
     private MyEventListener listener;
+    private Messages messages;
 
     private boolean running;
 
     private byte[] inBuf = new byte[256];
     private byte[] outBuf = new byte[256];
-    HashMap<Integer, ArrayList<String>> delivered = new HashMap<Integer, ArrayList<String>>();
-    HashMap<Integer, ArrayList<String>> sent = new HashMap<Integer, ArrayList<String>>();
-    HashMap<Integer, ArrayList<String>> messages = new HashMap<Integer, ArrayList<String>>();
-    HashMap<Integer, ArrayList<String>> ack = new HashMap<Integer, ArrayList<String>>();
+    // HashMap<Integer, ArrayList<String>> delivered = new HashMap<Integer, ArrayList<String>>();
+    // HashMap<Integer, ArrayList<String>> sent = new HashMap<Integer, ArrayList<String>>();
+    // HashMap<Integer, ArrayList<String>> messages = new HashMap<Integer, ArrayList<String>>();
+    // HashMap<Integer, ArrayList<String>> ack = new HashMap<Integer, ArrayList<String>>();
 
     private final ReentrantReadWriteLock outputLock = new ReentrantReadWriteLock();
 
@@ -40,6 +40,7 @@ public class PerfectLinks extends Thread {
         this.output = "";
         this.running = false;
         this.peers = new ArrayList<Host>();
+        this.messages = new Messages(configs);
 
         // Create socket
         InetSocketAddress address = new InetSocketAddress(me.getIp(), me.getPort());
@@ -50,32 +51,16 @@ public class PerfectLinks extends Thread {
             System.err.println("Cannot Create Socket: " + e);
         }
 
-        // Initialize messages with messages to send
-        for (Config config: configs) {
-            if (config.getId() != me.getId()) {
-                int receiver = config.getId();
-
-                // Add messages to messages map
-                int i = 1;
-                while (i <= config.getM()) {
-                    // Put each message in map
-                    String message = Integer.toString(i);
-                    putMessageInMap(messages, receiver, message);
-                    i++;
-                }
-            }
-        }
-
     }
 
-    public boolean send(int dest, String m) {
+    public boolean send(Host dest, Message m) {
         // System.out.println("Inside send");
 
-        InetSocketAddress address = hosts.getAddressById(dest);
+        InetSocketAddress address = dest.getAddress();
 
         // Create output buffer
         outBuf = new byte[256];
-        outBuf = m.getBytes();
+        outBuf = m.getContent().getBytes();
 
         // Create packet
         DatagramPacket packet = new DatagramPacket(outBuf, 0, outBuf.length, address);
@@ -85,8 +70,8 @@ public class PerfectLinks extends Thread {
             socket.send(packet);
 
             // Update sent map
-            if (!m.contains("ACK/")) {
-                putMessageInMap(sent, dest, m);
+            if (m.getType() != MessageType.ACK) {
+                messages.putMessageInMap(messages.getSent(), dest, m);
             }
         } catch(IOException e) {
             System.err.println("Client.Send Error: " + e);
@@ -106,17 +91,17 @@ public class PerfectLinks extends Thread {
         int maxMessages = getMaxMessages(configs);
         Boolean[] firstBroadcastI = new Boolean[maxMessages + 1];
         Arrays.fill(firstBroadcastI, Boolean.TRUE);
-        while (!doesAckEqualMessages(ack, messages)) {
+        while (!messages.doesAckEqualMessages()) {
             // System.out.println("ACK does not equal messages");
             int i = 1;
             while (i <= maxMessages) {
                 for (Config config: configs) {
-                    int receiver = config.getId();
+                    Host receiver = Hosts.getHostById(config.getId());
                     // Host receiver = getHostById(config.getId());
                     // InetSocketAddress address = new InetSocketAddress(receiver.getIp(), receiver.getPort());
-                    if (config.getId() != me.getId() && i <= config.getM()) {
-                        String message = Integer.toString(i);
-                        if (!isMessageInMap(ack, receiver, message)) {
+                    if (i <= config.getM()) {
+                        Message message = new Message(MessageType.BROADCAST, Integer.toString(i));
+                        if (!messages.isMessageInMap(messages.getAck(), receiver, message)) {
                             // System.out.println("INSIDE SENDALL");
                             // System.out.printf("Sending %s\n", message);
                             if (firstBroadcastI[i] && firstBroadcastRound) {
@@ -158,25 +143,27 @@ public class PerfectLinks extends Thread {
                 // System.out.printf("MESSAGE LENGTH: %s\n", message.length());
                 // Clear buffer after processing it
     
-                int id = hosts.getHostByAddress(address, port).getId();
+                Host from = hosts.getHostByAddress(address, port);
                 // System.out.printf("RECEIVED MESSAGE: %s\n", message);
                 if (!message.contains("ACK/")) {
                     // System.out.println("About to deliver message");
-                    deliver(id, message);
+                    Message m = new Message(MessageType.BROADCAST, message);
+                    deliver(from, m);
 
                     // Send ack back, even if already delivered
                     // System.out.printf("This is what I am sending back: %s\n", String.format("ACK/%s", message));
-                    send(id, String.format("ACK/%s", message));
+                    Message ack = new Message(MessageType.ACK, message);
+                    send(from, ack);
                 } else {
                     // Process ACK
                     if (message.split("/").length > 1) {
                         if (!message.split("/")[1].equals("")) {
                             // System.out.printf("Message Length: %s\n", message.split("/").length);
                             // System.out.printf("This is what I am putting in ACK: %s\n", message.split("/")[1]);
-                            String m = message.split("/")[1]
-                            putMessageInMap(ack, id, m);
+                            Message m = new Message(MessageType.ACK, message.split("/")[1]);
+                            messages.putMessageInMap(messages.getAck(), from, m);
                             // Trigger receive ACK event
-                            listener.ReceivedAck(m);
+                            // listener.ReceivedAck(m);
 
                         }
                     }
@@ -199,78 +186,78 @@ public class PerfectLinks extends Thread {
         return output;
     }
 
-    /**
-     * Checks if message in delivered
-     * If not in delivered, adds to delivered
-     * @param from
-     * @param message
-     * @return boolean
-     */
-    private boolean putMessageInMap(HashMap<Integer, ArrayList<String>> map, Integer from, String message) {
-        if (message.equals("")) {
-            return false;
-        }
+    // /**
+    //  * Checks if message in delivered
+    //  * If not in delivered, adds to delivered
+    //  * @param from
+    //  * @param message
+    //  * @return boolean
+    //  */
+    // private boolean putMessageInMap(HashMap<Integer, ArrayList<String>> map, Integer from, String message) {
+    //     if (message.equals("")) {
+    //         return false;
+    //     }
         
-        ArrayList<String> msgList = map.get(from);
+    //     ArrayList<String> msgList = map.get(from);
 
-        if(msgList == null) {
-            // If no messages in delivered, create list
-            msgList = new ArrayList<String>();
-            msgList.add(message);
-            map.put(from, msgList);
-            return true;
-        } else {
-            // If messages in delivered, make sure not a duplicate
-            if(!msgList.contains(message)) {
-                msgList.add(message);
-                return true;
-            } 
-        }
+    //     if(msgList == null) {
+    //         // If no messages in delivered, create list
+    //         msgList = new ArrayList<String>();
+    //         msgList.add(message);
+    //         map.put(from, msgList);
+    //         return true;
+    //     } else {
+    //         // If messages in delivered, make sure not a duplicate
+    //         if(!msgList.contains(message)) {
+    //             msgList.add(message);
+    //             return true;
+    //         } 
+    //     }
 
-        return false;
-    }
+    //     return false;
+    // }
 
-    private boolean isMessageInMap(HashMap<Integer, ArrayList<String>> map, Integer from, String message) {
-        ArrayList<String> msgList = map.get(from);
+    // private boolean isMessageInMap(HashMap<Integer, ArrayList<String>> map, Integer from, String message) {
+    //     ArrayList<String> msgList = map.get(from);
 
-        if(msgList == null) {
-            // If no messages, not in list
-            return false;
-        } else {
-            // If messages in delivered, make sure not a duplicate
-            if(msgList.contains(message)) {
-                return true;
-            } 
-        }
+    //     if(msgList == null) {
+    //         // If no messages, not in list
+    //         return false;
+    //     } else {
+    //         // If messages in delivered, make sure not a duplicate
+    //         if(msgList.contains(message)) {
+    //             return true;
+    //         } 
+    //     }
 
-        return false;
-    }
+    //     return false;
+    // }
 
-    private boolean doesAckEqualMessages(HashMap<Integer, ArrayList<String>> ack, HashMap<Integer, ArrayList<String>> messages) {
-        // Loop through configs, get receiver address
-        for (Config config: configs) {
-            if (config.getId() != me.getId()) {
-                int receiver = config.getId();
+    // private boolean doesAckEqualMessages(HashMap<Integer, ArrayList<String>> ack, HashMap<Integer, ArrayList<String>> messages) {
+    //     // Loop through configs, get receiver address
+    //     for (Config config: configs) {
+    //         if (config.getId() != me.getId()) {
+    //             int receiver = config.getId();
 
-                ArrayList<String> ackList = ack.get(receiver);
-                ArrayList<String> messageList = messages.get(receiver);
+    //             ArrayList<String> ackList = ack.get(receiver);
+    //             ArrayList<String> messageList = messages.get(receiver);
 
-                if(ackList == null) {
-                    // If no messages, not in list
-                    return false;
-                } else {
-                    for (String message: messageList) {
-                        if (!ackList.contains(message)) {
-                            return false;
-                        }
-                    }
-                }
-            }
-        }
+    //             if(ackList == null) {
+    //                 // If no messages, not in list
+    //                 return false;
+    //             } else {
+    //                 for (String message: messageList) {
+    //                     if (!ackList.contains(message)) {
+    //                         return false;
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
 
-        return true;
+    //     return true;
                 
-    }
+    // }
 
     private int getMaxMessages(List<Config> configs) {
         int maxMessages = 0;
@@ -287,8 +274,8 @@ public class PerfectLinks extends Thread {
         this.listener = listener;
     }
 
-    private void deliver(int src, String m) {
-        if (putMessageInMap(delivered, src, m)) {
+    private void deliver(Host src, Message m) {
+        if (messages.putMessageInMap(messages.getDelivered(), src, m)) {
             // If message has not been delivered, deliver message
             deliver(src, m);
             writeDeliver(src, m);
@@ -312,15 +299,15 @@ public class PerfectLinks extends Thread {
         return peers;
     }
 
-    private void writeDeliver(int p, String m) {
+    private void writeDeliver(Host p, Message m) {
         outputLock.writeLock().lock();
-        output = String.format("%sd %s %s\n", output, p, m);
+        output = String.format("%sd %s %s\n", output, p.getId(), m.getContent());
         outputLock.writeLock().unlock();
     }
 
-    private void writeBroadcast(String m) {
+    private void writeBroadcast(Message m) {
         outputLock.writeLock().lock();
-        output = String.format("%sb %s\n", output, m);
+        output = String.format("%sb %s\n", output, m.getContent());
         outputLock.writeLock().unlock();
     }
 }

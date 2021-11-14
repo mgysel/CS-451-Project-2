@@ -97,8 +97,10 @@ public class Main {
         List<Config> configs = new ArrayList<Config>();
         int m = parser.bebConfigM();
         for (Host host: hosts.getHosts()) {
-            Config newConfig = new Config(m, host.getId());
-            configs.add(newConfig);
+            if (host.getId() != me.getId()) {
+                Config newConfig = new Config(m, host.getId());
+                configs.add(newConfig);
+            }
         }
         // Print output of configuration
         for (Config config: configs) {

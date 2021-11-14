@@ -5,17 +5,17 @@ import java.net.InetSocketAddress;
 import java.util.List;
 
 public class Hosts {
-    public List<Host> hosts;
+    public static List<Host> hosts;
     
     public Hosts(List<Host> hosts) {
-        this.hosts = hosts;
+        Hosts.hosts = hosts;
     }
 
     public List<Host> getHosts() {
         return hosts;
     }
 
-    public Host getHostById(int id) {
+    public static Host getHostById(int id) {
         for (Host host: hosts) {
             if (host.getId() == id) {
                 return host;
