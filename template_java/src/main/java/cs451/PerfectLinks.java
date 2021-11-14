@@ -15,9 +15,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class PerfectLinks extends Thread {
     private Host me;
-    private DatagramSocket socket;
-    private List<Config> configs;
-    private List<Host> hosts;
+    public DatagramSocket socket;
+    public List<Config> configs;
+    public Hosts hosts;
     private List<Host> peers;
     private String output;
     private MyEventListener listener;
@@ -33,7 +33,7 @@ public class PerfectLinks extends Thread {
 
     private final ReentrantReadWriteLock outputLock = new ReentrantReadWriteLock();
 
-    public PerfectLinks(Host me, List<Config> configs, List<Host> hosts) {
+    public PerfectLinks(Host me, List<Config> configs, Hosts hosts) {
         this.me = me;
         this.configs = configs;
         this.hosts = hosts;
@@ -71,7 +71,7 @@ public class PerfectLinks extends Thread {
     public boolean send(int dest, String m) {
         // System.out.println("Inside send");
 
-        InetSocketAddress address = getAddressById(dest);
+        InetSocketAddress address = hosts.getAddressById(dest);
 
         // Create output buffer
         outBuf = new byte[256];
@@ -158,7 +158,7 @@ public class PerfectLinks extends Thread {
                 // System.out.printf("MESSAGE LENGTH: %s\n", message.length());
                 // Clear buffer after processing it
     
-                int id = getHostByAddress(address, port).getId();
+                int id = hosts.getHostByAddress(address, port).getId();
                 // System.out.printf("RECEIVED MESSAGE: %s\n", message);
                 if (!message.contains("ACK/")) {
                     // System.out.println("About to deliver message");
@@ -173,7 +173,11 @@ public class PerfectLinks extends Thread {
                         if (!message.split("/")[1].equals("")) {
                             // System.out.printf("Message Length: %s\n", message.split("/").length);
                             // System.out.printf("This is what I am putting in ACK: %s\n", message.split("/")[1]);
-                            putMessageInMap(ack, id, message.split("/")[1]);
+                            String m = message.split("/")[1]
+                            putMessageInMap(ack, id, m);
+                            // Trigger receive ACK event
+                            listener.ReceivedAck(m);
+
                         }
                     }
                 }
@@ -193,36 +197,6 @@ public class PerfectLinks extends Thread {
         running = false;
         socket.close();
         return output;
-    }
-
-    private Host getHostById(int id) {
-        for (Host host: hosts) {
-            if (host.getId() == id) {
-                return host;
-            }
-        }
-
-        return null;
-    }
-
-    private InetSocketAddress getAddressById(int id) {
-        Host host = getHostById(id);
-        InetSocketAddress address = new InetSocketAddress(host.getIp(), host.getPort());
-        return address;
-    }
-
-    private Host getHostByAddress(InetAddress ip, int port) {
-        for (Host host: hosts) {
-            // Create Socket Address for host and ip/port
-            InetSocketAddress host1 = new InetSocketAddress(host.getIp(), host.getPort());
-            InetSocketAddress host2 = new InetSocketAddress(ip, port);
-
-            if (host1.equals(host2)) {
-                return host;
-            }
-        }
-
-        return null;
     }
 
     /**
@@ -326,7 +300,7 @@ public class PerfectLinks extends Thread {
         return configs;
     }
 
-    public List<Host> getHosts() {
+    public Hosts getHosts() {
         return hosts;
     }
 

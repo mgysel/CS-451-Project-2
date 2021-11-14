@@ -51,8 +51,9 @@ public class Main {
         System.out.println("List of resolved hosts is:");
         System.out.println("==========================");
         Host me = null;
-        List<Host> hosts = parser.hosts();
-        for (Host host: hosts) {
+        List<Host> hostsList = parser.hosts();
+        Hosts hosts = new Hosts(hostsList);
+        for (Host host: hosts.getHosts()) {
             if (host.getId() == parser.myId()) {
                 me = host;
             }
@@ -95,7 +96,7 @@ public class Main {
         // Loop through hosts and build a configuration file
         List<Config> configs = new ArrayList<Config>();
         int m = parser.bebConfigM();
-        for (Host host: hosts) {
+        for (Host host: hosts.getHosts()) {
             Config newConfig = new Config(m, host.getId());
             configs.add(newConfig);
         }
