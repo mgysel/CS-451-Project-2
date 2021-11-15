@@ -23,6 +23,16 @@ public class Message {
         }
     }
 
+    // public Message(String message) {
+    //     if (message.contains("A/")) {
+    //         this.type = MessageType.ACK;
+    //         if (message.split("/").length > 1) {
+    //             if (!message.split("/")[1].equals("")) {
+    //                 this.content = message.split("/")[1];
+    //             }
+    //     } else if (message.contains("F/"))
+    // }
+
     public MessageType getType() {
         return this.type;
     }
@@ -34,7 +44,6 @@ public class Message {
     // Compare Message objects
     @Override
     public boolean equals(Object o) {
-  
         // If the object is compared with itself then return true 
         if (o == this) {
             return true;
@@ -50,7 +59,7 @@ public class Message {
         Message m = (Message) o;
         
         // Compare the data members and return accordingly
-        if (m.getType() == this.getType() && m.getContent() == this.getContent()) {
+        if (m.getType() == this.getType() && m.getContent().equals(this.getContent())) {
             return true;
         }
 

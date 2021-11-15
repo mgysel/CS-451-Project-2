@@ -9,6 +9,7 @@ public class Parser {
     private IdParser idParser;
     private HostsParser hostsParser;
     private OutputParser outputParser;
+    private PLConfigParser plConfigParser;
     private BEBConfigParser bebConfigParser;
 
     public Parser(String[] args) {
@@ -21,6 +22,7 @@ public class Parser {
         idParser = new IdParser();
         hostsParser = new HostsParser();
         outputParser = new OutputParser();
+        plConfigParser = new PLConfigParser();
         bebConfigParser = new BEBConfigParser();
 
         int argsNum = args.length;
@@ -44,9 +46,13 @@ public class Parser {
             help();
         }
 
-        if (!bebConfigParser.populate(args[Constants.CONFIG_VALUE])) {
+        if (!plConfigParser.populate(args[Constants.CONFIG_VALUE])) {
             help();
         }
+
+        // if (!bebConfigParser.populate(args[Constants.CONFIG_VALUE])) {
+        //     help();
+        // }
     }
 
     private void help() {
@@ -64,6 +70,14 @@ public class Parser {
 
     public String output() {
         return outputParser.getPath();
+    }
+
+    public String plConfigPath() {
+        return plConfigParser.getPath();
+    }
+
+    public List<Config> plConfigConfigs() {
+        return plConfigParser.getConfigs();
     }
 
     public String bebConfigPath() {

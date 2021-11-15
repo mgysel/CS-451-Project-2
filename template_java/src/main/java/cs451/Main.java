@@ -17,7 +17,7 @@ public class Main {
         }
     }
 
-    private static void handleSignal(PerfectLinks pl, BestEffortBroadcast beb, String filename) {
+    private static void handleSignal(PerfectLinks pl, String filename) {
         //immediately stop network packet processing
         System.out.println("Immediately stopping network packet processing.");
         String output = pl.close();
@@ -27,22 +27,35 @@ public class Main {
         writeOutput(output, filename);
     }
 
-    private static void initSignalHandlers(PerfectLinks pl, BestEffortBroadcast beb, String filename) {
+    private static void initSignalHandlers(PerfectLinks pl, String filename) {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                handleSignal(pl, beb, filename);
+                handleSignal(pl, filename);
             }
         });
     }
 
-    public static void main(String[] args) throws InterruptedException {
-        Parser parser = new Parser(args);
-        parser.parse();
+    private static Hosts getHosts(Parser parser) {
+        List<Host> hostsList = parser.hosts();
+        Hosts hosts = new Hosts(hostsList);
+        
+        return hosts;
+    }
 
-        // initSignalHandlers();
+    private static Host getMe(Parser parser, Hosts hosts) {
+        Host me = null;
+        for (Host host: hosts.getHosts()) {
+            if (host.getId() == parser.myId()) {
+                me = host;
+                return me;
+            }
+        }
 
-        // example
+        return me;
+    }
+
+    private static void printInit(Parser parser) {
         long pid = ProcessHandle.current().pid();
         System.out.println("My PID: " + pid + "\n");
         System.out.println("From a new terminal type `kill -SIGINT " + pid + "` or `kill -SIGTERM " + pid + "` to stop processing packets\n");
@@ -50,33 +63,79 @@ public class Main {
         System.out.println("My ID: " + parser.myId() + "\n");
         System.out.println("List of resolved hosts is:");
         System.out.println("==========================");
-        Host me = null;
-        List<Host> hostsList = parser.hosts();
-        Hosts hosts = new Hosts(hostsList);
+
+        System.out.println("Path to output:");
+        System.out.println("===============");
+        System.out.println(parser.output() + "\n");
+    }
+
+    private static void printHosts(Hosts hosts) {
         for (Host host: hosts.getHosts()) {
-            if (host.getId() == parser.myId()) {
-                me = host;
-            }
             System.out.println(host.getId());
             System.out.println("Human-readable IP: " + host.getIp());
             System.out.println("Human-readable Port: " + host.getPort());
             System.out.println();
         }
         System.out.println();
+    }
 
-        System.out.println("Path to output:");
+    private static List<Config> getConfigs(Parser parser) {
+        List<Config> configs = parser.plConfigConfigs();
+        return configs;
+    }
+
+    private static void printConfigs(Parser parser, List<Config> configs) {
+        System.out.println("Path to config:");
         System.out.println("===============");
-        System.out.println(parser.output() + "\n");
+        System.out.println(parser.plConfigPath() + "\n");
+        System.out.println("List of configs is:");
+        System.out.println("==========================");
+        for (Config config: configs) {
+            System.out.println(config.getId());
+            System.out.println("M: " + config.getM());
+            System.out.println();
+        }
+        System.out.println();
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        Parser parser = new Parser(args);
+        parser.parse();
+
+        // initSignalHandlers();
+        printInit(parser);
+
+        // example
+        Hosts hosts = getHosts(parser);
+        Host me = getMe(parser, hosts);
+        printHosts(hosts);
+
 
         // *************************************************************
         // PerfectLinks Configuration
         // *************************************************************
+        List<Config> configs = getConfigs(parser);
+        printConfigs(parser, configs);
+
+        // *************************************************************
+        // BestEfforBroadcast Configuration
+        // *************************************************************
         // System.out.println("Path to config:");
         // System.out.println("===============");
-        // System.out.println(parser.plConfigPath() + "\n");
+        // System.out.println(parser.bebConfigPath() + "\n");
         // System.out.println("List of configs is:");
         // System.out.println("==========================");
-        // List<Config> configs = parser.plConfigConfigs();
+        
+        // // Loop through hosts and build a configuration file
+        // List<Config> configs = new ArrayList<Config>();
+        // int m = parser.bebConfigM();
+        // for (Host host: hosts.getHosts()) {
+        //     if (host.getId() != me.getId()) {
+        //         Config newConfig = new Config(m, host.getId());
+        //         configs.add(newConfig);
+        //     }
+        // }
+        // // Print output of configuration
         // for (Config config: configs) {
         //     System.out.println(config.getId());
         //     System.out.println("M: " + config.getM());
@@ -84,48 +143,22 @@ public class Main {
         // }
         // System.out.println();
 
-        // *************************************************************
-        // BestEfforBroadcast Configuration
-        // *************************************************************
-        System.out.println("Path to config:");
-        System.out.println("===============");
-        System.out.println(parser.bebConfigPath() + "\n");
-        System.out.println("List of configs is:");
-        System.out.println("==========================");
-        
-        // Loop through hosts and build a configuration file
-        List<Config> configs = new ArrayList<Config>();
-        int m = parser.bebConfigM();
-        for (Host host: hosts.getHosts()) {
-            if (host.getId() != me.getId()) {
-                Config newConfig = new Config(m, host.getId());
-                configs.add(newConfig);
-            }
-        }
-        // Print output of configuration
-        for (Config config: configs) {
-            System.out.println(config.getId());
-            System.out.println("M: " + config.getM());
-            System.out.println();
-        }
-        System.out.println();
-
 
         System.out.println("Doing some initialization\n");
         PerfectLinks pl = new PerfectLinks(me, configs, hosts);
         // initSignalHandlers(pl, parser.output());
-        BestEffortBroadcast beb = new BestEffortBroadcast(pl);
-        initSignalHandlers(pl, beb, parser.output());
+        // BestEffortBroadcast beb = new BestEffortBroadcast(pl);
+        initSignalHandlers(pl, parser.output());
 
         System.out.println("Broadcasting and delivering messages...\n");
 
         // *********************************************************************
         // SEND AND RECEIVE MESSAGES
         // *********************************************************************
-        // pl.start();
-        // pl.sendAll();
-        beb.start();
-        beb.broadcastAll();
+        pl.start();
+        pl.sendAll();
+        // beb.start();
+        // beb.broadcastAll();
 
         // *********************************************************************
 
