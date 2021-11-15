@@ -12,26 +12,22 @@ public class Message {
 
     public Message(MessageType type, String content) {
         this.type = type;
-
-        // Content differs based on message type
-        if (type == MessageType.BROADCAST) {
-            this.content = content;
-        } else if (type == MessageType.ACK) {
-            this.content = String.format("A/%s", content);
-        } else if (type == MessageType.FORWARD) {
-            this.content = String.format("F/%s", content);
-        }
+        this.content = content;
     }
 
-    // public Message(String message) {
-    //     if (message.contains("A/")) {
-    //         this.type = MessageType.ACK;
-    //         if (message.split("/").length > 1) {
-    //             if (!message.split("/")[1].equals("")) {
-    //                 this.content = message.split("/")[1];
-    //             }
-    //     } else if (message.contains("F/"))
-    // }
+    public Message(String message) {
+        String[] messageComponents = message.split("/");
+        if (messageComponents.length == 2) {
+            if (messageComponents[0].equals("A")) {
+                this.type = MessageType.ACK;
+            } else if (messageComponents[0].equals("B")) {
+                this.type = MessageType.BROADCAST;
+            } else if (messageComponents[0].equals("F")) {
+                this.type = MessageType.FORWARD;
+            }
+            this.content = messageComponents[1];
+        }
+    }
 
     public MessageType getType() {
         return this.type;
@@ -64,5 +60,20 @@ public class Message {
         }
 
         return false;
+    }
+
+    @Override
+    public String toString() {
+        String output = "";
+        if (this.type == MessageType.BROADCAST) {
+            output += "B/";
+        } else if (this.type == MessageType.ACK) {
+            output += "A/";
+        } else if (this.type == MessageType.FORWARD) {
+            output += "F/";
+        }
+        output += this.content;
+
+        return output;
     }
 }

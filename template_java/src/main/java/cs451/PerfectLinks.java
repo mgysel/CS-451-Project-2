@@ -31,7 +31,7 @@ public class PerfectLinks extends Thread {
     public boolean send(Host dest, Message m) {
         System.out.println("Inside send");
         InetSocketAddress address = dest.getAddress();
-        String content = m.getContent();
+        String content = m.toString();
 
         if (udp.send(address, content)) {
             // Update sent map
@@ -85,31 +85,25 @@ public class PerfectLinks extends Thread {
 
             if (packet != null) {
                 Host from = hosts.getHostByAddress(packet.getAddress(), packet.getPort());
-                String message = new String(packet.getData(), packet.getOffset(),  packet.getLength()).trim();
-
+                String received = new String(packet.getData(), packet.getOffset(),  packet.getLength()).trim();
+                Message message = new Message(received);
                 // System.out.println("***** Inside Receive");
-                // System.out.printf("RECEIVED MESSAGE: %s\n", message);
-                if (!message.contains("A/")) {
-                    // System.out.println("About to deliver message");
-                    Message m = new Message(MessageType.BROADCAST, message);
-                    deliver(from, m);
-
+                // System.out.printf("RECEIVED MESSAGE: %s\n", received);
+                // System.out.printf("FORMATTED MESSAGE: %s\n", message.toString());
+                // System.out.printf("TYPE: %s\n", message.getType());
+                // System.out.printf("CONTENT: %s\n", message.getContent());
+                if (message.getType() == MessageType.BROADCAST) {
+                    deliver(from, message);
                     // Send ack back, even if already delivered
-                    // System.out.printf("This is what I am sending back: %s\n", String.format("ACK/%s", message));
-                    Message ack = new Message(MessageType.ACK, message);
+                    Message ack = new Message(MessageType.ACK, message.getContent());
                     send(from, ack);
-                } else {
+                } else if (message.getType() == MessageType.ACK) {
                     // Process ACK
-                    if (message.split("/").length == 2) {
-                        if (!message.split("/")[1].equals("")) {
-                            Message m = new Message(MessageType.BROADCAST, message.split("/")[1]);
-                            messages.removeMessage(messages.getMessages(), from, m);
-    
-                        }
-                    } else {
-                        System.out.println("***** Not proper messages sent");
-                        System.out.printf("Message: %s\n", message);
-                    }
+                    Message removeMessage = new Message(MessageType.BROADCAST, message.getContent());
+                    messages.removeMessage(messages.getMessages(), from, removeMessage);
+                } else {
+                    System.out.println("***** Not proper messages sent");
+                    System.out.printf("Message: %s\n", received);
                 }
             }
         }
