@@ -86,7 +86,7 @@ public class PerfectLinks extends Thread {
             if (packet != null) {
                 Host from = hosts.getHostByAddress(packet.getAddress(), packet.getPort());
                 String received = new String(packet.getData(), packet.getOffset(),  packet.getLength()).trim();
-                Message message = new Message(received);
+                Message message = new Message(received, hosts);
                 // System.out.println("***** Inside Receive");
                 // System.out.printf("RECEIVED MESSAGE: %s\n", received);
                 // System.out.printf("FORMATTED MESSAGE: %s\n", message.toString());
@@ -95,11 +95,11 @@ public class PerfectLinks extends Thread {
                 if (message.getType() == MessageType.BROADCAST) {
                     deliver(from, message);
                     // Send ack back, even if already delivered
-                    Message ack = new Message(MessageType.ACK, message.getContent());
+                    Message ack = new Message(MessageType.ACK, me, message.getContent());
                     send(from, ack);
                 } else if (message.getType() == MessageType.ACK) {
                     // Process ACK
-                    Message removeMessage = new Message(MessageType.BROADCAST, message.getContent());
+                    Message removeMessage = new Message(MessageType.BROADCAST, me, message.getContent());
                     messages.removeMessage(messages.getMessages(), from, removeMessage);
                 } else {
                     System.out.println("***** Not proper messages sent");
@@ -151,5 +151,13 @@ public class PerfectLinks extends Thread {
 
     public Host getMe() {
         return me;
+    }
+
+    public UDP getUDP() {
+        return udp;
+    }
+
+    public Messages getMessages() {
+        return messages;
     }
 }

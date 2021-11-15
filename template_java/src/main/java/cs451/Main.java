@@ -27,11 +27,30 @@ public class Main {
         writeOutput(output, filename);
     }
 
+    private static void handleSignal(UniformBroadcast ub, String filename) {
+        //immediately stop network packet processing
+        System.out.println("Immediately stopping network packet processing.");
+        String output = ub.close();
+
+        //write/flush output file if necessary
+        System.out.println("Writing output.");
+        writeOutput(output, filename);
+    }
+
     private static void initSignalHandlers(PerfectLinks pl, String filename) {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
                 handleSignal(pl, filename);
+            }
+        });
+    }
+
+    private static void initSignalHandlers(UniformBroadcast ub, String filename) {
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                handleSignal(ub, filename);
             }
         });
     }
@@ -53,6 +72,14 @@ public class Main {
         }
 
         return me;
+    }
+
+    private static List<Config> getBroadcastConfigs(Parser parser, Hosts hosts) {
+        int m = parser.bebConfigM();
+        List<Config> configs = new ArrayList<Config>();
+        for (Host host: hosts.getHosts()) {
+            Config config = new Config(m, host.getId());
+        }
     }
 
     private static void printInit(Parser parser) {
@@ -77,11 +104,6 @@ public class Main {
             System.out.println();
         }
         System.out.println();
-    }
-
-    private static List<Config> getConfigs(Parser parser) {
-        List<Config> configs = parser.plConfigConfigs();
-        return configs;
     }
 
     private static void printConfigs(Parser parser, List<Config> configs) {
@@ -114,51 +136,31 @@ public class Main {
         // *************************************************************
         // PerfectLinks Configuration
         // *************************************************************
-        List<Config> configs = getConfigs(parser);
-        printConfigs(parser, configs);
+        // List<Config> configs = parser.plConfigConfigs();
+        // printConfigs(parser, configs);
 
         // *************************************************************
-        // BestEfforBroadcast Configuration
+        // UniformBroadcast Configuration
         // *************************************************************
-        // System.out.println("Path to config:");
-        // System.out.println("===============");
-        // System.out.println(parser.bebConfigPath() + "\n");
-        // System.out.println("List of configs is:");
-        // System.out.println("==========================");
-        
-        // // Loop through hosts and build a configuration file
-        // List<Config> configs = new ArrayList<Config>();
-        // int m = parser.bebConfigM();
-        // for (Host host: hosts.getHosts()) {
-        //     if (host.getId() != me.getId()) {
-        //         Config newConfig = new Config(m, host.getId());
-        //         configs.add(newConfig);
-        //     }
-        // }
-        // // Print output of configuration
-        // for (Config config: configs) {
-        //     System.out.println(config.getId());
-        //     System.out.println("M: " + config.getM());
-        //     System.out.println();
-        // }
-        // System.out.println();
+        List<Config> configs = getBroadcastConfigs(parser, hosts);
+        printConfigs(parser, configs);
 
 
         System.out.println("Doing some initialization\n");
         PerfectLinks pl = new PerfectLinks(me, configs, hosts);
         // initSignalHandlers(pl, parser.output());
-        // BestEffortBroadcast beb = new BestEffortBroadcast(pl);
-        initSignalHandlers(pl, parser.output());
+        UniformBroadcast ub = new UniformBroadcast(pl);
+        initSignalHandlers(ub, parser.output());
 
         System.out.println("Broadcasting and delivering messages...\n");
 
         // *********************************************************************
         // SEND AND RECEIVE MESSAGES
         // *********************************************************************
-        pl.start();
-        pl.sendAll();
-        // beb.start();
-        // beb.broadcastAll();
+        // pl.start();
+        // pl.sendAll();
+        ub.start();
+        ub.broadcastAll();
 
         // *********************************************************************
 

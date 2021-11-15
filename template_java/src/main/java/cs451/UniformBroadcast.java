@@ -1,84 +1,81 @@
 package cs451;
 
-import java.io.IOException;
 import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.SocketTimeoutException;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class UniformBroadcast extends Thread implements MyEventListener {
     private PerfectLinks pl;
+    private Host me;
+    public Hosts hosts;
+    public List<Config> configs;
+    private Messages messages;
+    private UDP udp;
+
     private String output;
 
-    private List<Config> configs;
+    private boolean running;
     
     private final ReentrantReadWriteLock outputLock = new ReentrantReadWriteLock();
     
     public UniformBroadcast(PerfectLinks pl) {
         this.pl = pl;
         this.pl.setMyEventListener(this);
-        this.configs = pl.configs;
+        this.configs = pl.getConfigs();
+        this.me = pl.getMe();
+        this.hosts = pl.getHosts();
+        this.messages = pl.getMessages();
+        this.udp = pl.getUDP();
     }
 
     // Broadcast
-    public void broadcast() {
+    public void broadcast(Message message) {
+        // Send all messages
         pl.sendAll();
-        // 
     }
 
-    // // Run server
-    // public void run() {
-    //     // pl.start();
+    // NOTE: start is used to run a thread asynchronously
+    public void run() {
+        System.out.println("INSIDE RUN");
 
-    //     // Receive Packet
-    //     DatagramPacket packet = new DatagramPacket(inBuf, inBuf.length);
-    //     try {
-    //         packet.setLength(inBuf.length);
-    //         socket.receive(packet);
+        running = true;
 
-    //         InetAddress address = packet.getAddress();
-    //         int port = packet.getPort();
-    //         packet = new DatagramPacket(inBuf, inBuf.length, address, port);
-            
-    //         String message = new String(packet.getData(), packet.getOffset(),  packet.getLength()).trim();
-    //         // System.out.printf("PACKET LENGTH: %s\n", packet.getLength());
-    //         // System.out.printf("MESSAGE LENGTH: %s\n", message.length());
-    //         // Clear buffer after processing it
+        while (running) {
 
-    //         int id = pl.getHostByAddress(address, port).getId();
-    //         // System.out.printf("RECEIVED MESSAGE: %s\n", message);
-    //         if (!message.contains("ACK/")) {
-    //             // System.out.println("About to deliver message");
-    //             deliver(id, message);
+            // Receive Packet
+            DatagramPacket packet = udp.receive();
 
-    //             // Send ack back, even if already delivered
-    //             // System.out.printf("This is what I am sending back: %s\n", String.format("ACK/%s", message));
-    //             pl.send(id, String.format("ACK/%s", message));
-    //         } else {
-    //             // Process ACK
-    //             if (message.split("/").length > 1) {
-    //                 if (!message.split("/")[1].equals("")) {
-    //                     // System.out.printf("Message Length: %s\n", message.split("/").length);
-    //                     // System.out.printf("This is what I am putting in ACK: %s\n", message.split("/")[1]);
-    //                     String m = message.split("/")[1]
-    //                     putMessageInMap(ack, id, m);
-    //                     // Trigger receive ACK event
-    //                     listener.ReceivedAck(m);
+            if (packet != null) {
+                Host from = hosts.getHostByAddress(packet.getAddress(), packet.getPort());
+                String received = new String(packet.getData(), packet.getOffset(),  packet.getLength()).trim();
+                Message message = new Message(received, hosts);
+                // System.out.println("***** Inside Receive");
+                // System.out.printf("RECEIVED MESSAGE: %s\n", received);
+                // System.out.printf("FORMATTED MESSAGE: %s\n", message.toString());
+                // System.out.printf("TYPE: %s\n", message.getType());
+                // System.out.printf("CONTENT: %s\n", message.getContent());
+                
+                if (message.getType() == MessageType.BROADCAST) {
+                    // If we receive a broadcast message
+                    // 1. Add broadcast to messages, unless we have an ack for everyone
+                    // 2. Send ack back
+                    // 3. Broadcast to all who we do not already have an ack for
+                    deliver(from, message);
+                    // Send ack back, even if already delivered
+                    Message ack = new Message(MessageType.ACK, me, message.getContent());
+                    pl.send(from, ack);
+                } else if (message.getType() == MessageType.ACK) {
+                    // Process ACK
+                    Message removeMessage = new Message(MessageType.BROADCAST, me, message.getContent());
+                    messages.removeMessage(messages.getMessages(), from, removeMessage);
+                } else {
+                    System.out.println("***** Not proper messages sent");
+                    System.out.printf("Message: %s\n", received);
+                }
+            }
+        }
+    }
 
-    //                 }
-    //             }
-    //         }
-    //         inBuf = new byte[256];
-    //         // Arrays.fill(inBuf,(byte)0);
-    //     } catch (SocketTimeoutException e) {
-    //         continue;
-    //     } catch (IOException e) {
-    //         System.err.println("Server Cannot Receive Packet: " + e);
-    //     }
-    // }
 
     // Return output
     public String close() {
@@ -92,13 +89,13 @@ public class UniformBroadcast extends Thread implements MyEventListener {
         // System.out.println("Caught the delivery");
     }
 
-    private void deliver(int p, String m) {
-        writeDeliver(p, m);
+    private void deliver(Host src, Message m) {
+        writeDeliver(src, m);
     }
 
-    private void writeDeliver(int p, String m) {
+    private void writeDeliver(Host src, Message m) {
         outputLock.writeLock().lock();
-        output = String.format("%sd %s %s\n", output, p, m);
+        output = String.format("%sd %s %s\n", output, src.getId(), m.getContent());
         outputLock.writeLock().unlock();
     }
 

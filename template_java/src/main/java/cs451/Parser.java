@@ -80,7 +80,7 @@ public class Parser {
         return plConfigParser.getConfigs();
     }
 
-    public String bebConfigPath() {
+    public String ubConfigPath() {
         return bebConfigParser.getPath();
     }
 

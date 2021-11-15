@@ -8,16 +8,18 @@ enum MessageType {
 
 public class Message {
     private MessageType type;
+    private Host from;
     private String content;
 
-    public Message(MessageType type, String content) {
+    public Message(MessageType type, Host from, String content) {
         this.type = type;
+        this.from = from;
         this.content = content;
     }
 
-    public Message(String message) {
+    public Message(String message, Hosts hosts) {
         String[] messageComponents = message.split("/");
-        if (messageComponents.length == 2) {
+        if (messageComponents.length == 3) {
             if (messageComponents[0].equals("A")) {
                 this.type = MessageType.ACK;
             } else if (messageComponents[0].equals("B")) {
@@ -25,7 +27,15 @@ public class Message {
             } else if (messageComponents[0].equals("F")) {
                 this.type = MessageType.FORWARD;
             }
-            this.content = messageComponents[1];
+            try {
+                Integer id = Integer.parseInt(messageComponents[1]);
+                this.from = hosts.getHostById(id);
+            } catch (NumberFormatException e) {
+                System.out.printf("Cannot convert message because ID is not an integer: ", e);
+            } catch (NullPointerException e) {
+                System.out.printf("Cannot convert message because ID is a null pointer: ", e);
+            }
+            this.content = messageComponents[2];
         }
     }
 
@@ -35,6 +45,10 @@ public class Message {
 
     public String getContent() {
         return this.content;
+    }
+
+    public Host getFrom() {
+        return this.from;
     }
 
     // Compare Message objects
@@ -66,13 +80,13 @@ public class Message {
     public String toString() {
         String output = "";
         if (this.type == MessageType.BROADCAST) {
-            output += "B/";
+            output += "B";
         } else if (this.type == MessageType.ACK) {
-            output += "A/";
+            output += "A";
         } else if (this.type == MessageType.FORWARD) {
-            output += "F/";
+            output += "F";
         }
-        output += this.content;
+        output = String.format("%s/%d/%s", output, this.from.getId(), this.content);
 
         return output;
     }

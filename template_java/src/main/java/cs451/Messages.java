@@ -25,15 +25,13 @@ public class Messages {
         for (Config config: configs) {
             Host receiver = hosts.getHostById(config.getId());
 
-            if (receiver.getId() != me.getId()) {
-                // Add messages to messages map
-                int i = 1;
-                while (i <= config.getM()) {
-                    // Put each message in map
-                    Message message = new Message(MessageType.BROADCAST, Integer.toString(i));
-                    putMessageInMap(messages, receiver, message);
-                    i++;
-                }
+            // Add messages to messages map
+            int i = 1;
+            while (i <= config.getM()) {
+                // Put each message in map
+                Message message = new Message(MessageType.BROADCAST, me, Integer.toString(i));
+                putMessageInMap(messages, receiver, message);
+                i++;
             }
         }
     }
