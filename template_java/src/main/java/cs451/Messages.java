@@ -128,6 +128,23 @@ public class Messages {
         return true;  
     }
 
+    public boolean updateAck(Host from, Message message) {
+        ArrayList<Message> msgList = messages.get(from);
+
+        if (msgList == null) {
+            return false;
+        } else {
+            for (Message m: msgList) {
+                if (m.equals(message)) {
+                    m.setReceivedAck(true);
+                    break;
+                }
+            }
+        }
+
+        return true;
+    }
+
     public HashMap<Host, ArrayList<Message>> getSent() {
         return Messages.sent;
     }

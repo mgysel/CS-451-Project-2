@@ -29,7 +29,7 @@ public class UniformBroadcast extends Thread implements MyEventListener {
     }
 
     // Broadcast
-    public void broadcast(Message message) {
+    public void broadcast() {
         // Send all messages
         pl.sendAll();
     }

@@ -79,7 +79,10 @@ public class Main {
         List<Config> configs = new ArrayList<Config>();
         for (Host host: hosts.getHosts()) {
             Config config = new Config(m, host.getId());
+            configs.add(config);
         }
+
+        return configs;
     }
 
     private static void printInit(Parser parser) {
@@ -160,7 +163,7 @@ public class Main {
         // pl.start();
         // pl.sendAll();
         ub.start();
-        ub.broadcastAll();
+        ub.broadcast();
 
         // *********************************************************************
 

@@ -10,11 +10,13 @@ public class Message {
     private MessageType type;
     private Host from;
     private String content;
+    private boolean receivedAck;
 
     public Message(MessageType type, Host from, String content) {
         this.type = type;
         this.from = from;
         this.content = content;
+        this.receivedAck = false;
     }
 
     public Message(String message, Hosts hosts) {
@@ -36,6 +38,7 @@ public class Message {
                 System.out.printf("Cannot convert message because ID is a null pointer: ", e);
             }
             this.content = messageComponents[2];
+            this.receivedAck = false;
         }
     }
 
@@ -49,6 +52,14 @@ public class Message {
 
     public Host getFrom() {
         return this.from;
+    }
+
+    public boolean getReceivedAck() {
+        return this.receivedAck;
+    }
+
+    public void setReceivedAck(boolean bool) {
+        this.receivedAck = bool;
     }
 
     // Compare Message objects

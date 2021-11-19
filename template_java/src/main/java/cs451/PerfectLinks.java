@@ -62,8 +62,10 @@ public class PerfectLinks extends Thread {
                     List<Message> msgList = messages.getMessages().get(peer);
                     if (msgList != null) {
                         for (Message m: msgList) {
-                            send(peer, m);
-                            writeBroadcast(m, firstBroadcast);
+                            if (m.getReceivedAck() == false) {
+                                send(peer, m);
+                                writeBroadcast(m, firstBroadcast);
+                            }
                         }
                     }
                     firstBroadcast = false;
@@ -99,8 +101,8 @@ public class PerfectLinks extends Thread {
                     send(from, ack);
                 } else if (message.getType() == MessageType.ACK) {
                     // Process ACK
-                    Message removeMessage = new Message(MessageType.BROADCAST, me, message.getContent());
-                    messages.removeMessage(messages.getMessages(), from, removeMessage);
+                    Message m = new Message(MessageType.BROADCAST, me, message.getContent());
+                    messages.updateAck(from, m);
                 } else {
                     System.out.println("***** Not proper messages sent");
                     System.out.printf("Message: %s\n", received);
