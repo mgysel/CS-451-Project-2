@@ -6,7 +6,7 @@ enum MessageType {
     FORWARD
 }
 
-public class Message {
+public class Message implements Comparable<Message> {
     private MessageType type;
     private int sequenceNumber;
     private Host from;
@@ -125,8 +125,19 @@ public class Message {
         return output;
     }
 
+    @Override
+    public int compareTo(Message m) {
+        Integer thisInt = this.getSequenceNumber();
+        Integer mInt = m.getSequenceNumber();
+        return thisInt.compareTo(mInt);
+    }
+
     public int getSequenceNumber() {
         return this.sequenceNumber;
+    }
+
+    public void setSequenceNumber(int sequenceNumber) {
+        this.sequenceNumber = sequenceNumber;
     }
 
     public MessageType getType() {

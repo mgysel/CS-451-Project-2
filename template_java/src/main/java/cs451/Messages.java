@@ -1,6 +1,7 @@
 package cs451;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,7 @@ public class Messages {
     static HashMap<Host, ArrayList<Message>> sent;
     static HashMap<Host, ArrayList<Message>> messages;
     static HashMap<Host, ArrayList<Message>> ack;
+    private HashMap<Host, ArrayList<Message>> toDeliver;
 
     private final ReentrantReadWriteLock messagesLock = new ReentrantReadWriteLock();
     ReentrantLock lock = new ReentrantLock();
@@ -29,6 +31,7 @@ public class Messages {
         Messages.sent = new HashMap<Host, ArrayList<Message>>();
         Messages.messages = new HashMap<Host, ArrayList<Message>>();
         Messages.ack = new HashMap<Host, ArrayList<Message>>();
+        this.toDeliver = new HashMap<Host, ArrayList<Message>>();
 
         // Initialize messages with messages to send
         for (Config config: configs) {
@@ -47,6 +50,7 @@ public class Messages {
         // Initialize delivered for each host
         for (Host host: hosts.getHosts()) {
             Messages.delivered.put(host, new ArrayList<Message>());
+            this.toDeliver.put(host, new ArrayList<Message>());
         }
     }
 
@@ -233,9 +237,11 @@ public class Messages {
         // HashMap<Host, ArrayList<Message>> messagesClone = getMessagesClone();
         double numAcks = 0.0;
         double total = (double) hosts.getHosts().size();
+        double majority = 0.0;
 
         // If each host does not have
         boolean isDelivered = false;
+        ArrayList<Message> equalMessages = new ArrayList<Message>();
         for (Map.Entry<Host, ArrayList<Message>> entry : messages.entrySet()) {
             // Check that each host has this message
             // Message must have received an ack and not already be delivered
@@ -251,6 +257,7 @@ public class Messages {
                     // System.out.printf("%s equals %s\n", m.toString(), message.toString());
                     // System.out.printf("Ack: %s\n", m.getReceivedAck());
                     // System.out.printf("Delivered: %s\n", m.getIsDelivered());
+                    equalMessages.add(message);
                     if (m.getReceivedAck()) {
                         // System.out.println("Received ack and not delivered");
                         numAcks += 1.0;
@@ -262,9 +269,19 @@ public class Messages {
                     // System.out.printf("%s does not equal %s\n", m.toString(), message.toString());
                 }
             }
+            majority = numAcks / total;
+
+            // If majority, update ACKs for all
+            if (majority > 0.5) {
+                for (Message m: equalMessages) {
+                    m.setReceivedAck(true);
+                }
+            }
         }
 
-        if (!isDelivered && (numAcks / total > 0.5)) {
+        if (!isDelivered && (majority > 0.5)) {
+            ArrayList<Message> msgList = messages.get(message.getHost());
+            msgList.add(message);
             return true;
         }
 
@@ -272,6 +289,52 @@ public class Messages {
         // printMap(messages);
         return false;
     }
+
+    public List<Message> getPrevMessages(Message message) {
+        // Get all messages with lower sequence numbers
+        List<Message> prevMessages = new ArrayList<Message>();
+        int i = 1;
+        while (i < message.getSequenceNumber()) {
+            Message copy = message.getCopy();
+            copy.setSequenceNumber(i);
+            prevMessages.add(copy);
+        }
+        prevMessages.add(message);
+
+        return prevMessages;
+    }
+
+    // public List<Message> messagesToDeliver(Message message) {
+    //     List<Message> deliver = new ArrayList<Message>();
+        
+    //     List<Message> messages = toDeliver.get(message.getHost());
+    //     Collections.sort(messages);
+
+    //     int i = message.getSequenceNumber();
+    //     boolean cont = true;
+        
+
+
+
+    //     // Get all messages with lower sequence numbers
+    //     List<Message> prevMessages = new ArrayList<Message>();
+    //     int i = 1;
+    //     while (i < message.getSequenceNumber()) {
+    //         Message copy = message.getCopy();
+    //         copy.setSequenceNumber(i);
+    //         prevMessages.add(copy);
+    //     }
+    //     prevMessages.add(message);
+
+    //     // Check if each message can be delivered, add to toDeliver
+    //     for (Message m: prevMessages) {
+    //         if (canDeliverMessage(m)) {
+    //             toDeliver.add(m);
+    //         }
+    //     }
+        
+    //     return toDeliver;
+    // }
 
     public void printMap(HashMap<Host, ArrayList<Message>> map) {
         lock.lock();
