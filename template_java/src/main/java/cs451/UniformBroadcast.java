@@ -41,22 +41,20 @@ public class UniformBroadcast extends Thread implements MyEventListener {
         // Send messages until we receive all acks
         boolean firstBroadcast = true;
         while (true) {
-            // For Host in config that is not me
+            // For Host in config (including me)
             for (Config config: configs) {
                 Host peer = hosts.getHostById(config.getId());
-                if (peer.getId() != me.getId()) {
-                    // Send all messages
-                    List<Message> msgList = messages.getMessages().get(peer);
-                    if (msgList != null) {
-                        for (Message m: msgList) {
-                            if (m.getReceivedAck() == false) {
-                                pl.send(peer, m);
-                                output.writeBroadcast(m, firstBroadcast);
-                            }
+                // Send all messages
+                List<Message> msgList = messages.getMessages().get(peer);
+                if (msgList != null) {
+                    for (Message m: msgList) {
+                        if (m.getReceivedAck() == false) {
+                            pl.send(peer, m);
+                            output.writeBroadcast(m, firstBroadcast);
                         }
                     }
-                    firstBroadcast = false;
                 }
+                firstBroadcast = false;
             }
         }
     }
@@ -78,11 +76,15 @@ public class UniformBroadcast extends Thread implements MyEventListener {
                 Message message = new Message(received, hosts);
                 System.out.println("***** Inside Receive");
                 System.out.printf("Received: %s\n", received);
+                System.out.println(received == null);
                 System.out.printf("RECEIVED MESSAGE: %s\n", received);
                 System.out.printf("FORMATTED MESSAGE: %s\n", message.toString());
                 System.out.printf("TYPE: %s\n", message.getType());
                 System.out.printf("CONTENT: %s\n", message.getContent());
                 if (message.getType() == MessageType.BROADCAST) {
+                    // Add message to messages for each host, unless already in messages
+                    messages.putMessagesInMap(message);
+
                     deliver(from, message);
                     // Send ack back, even if already delivered
                     Message ack = new Message(MessageType.ACK, me, message.getContent());

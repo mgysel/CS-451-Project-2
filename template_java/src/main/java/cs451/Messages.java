@@ -16,6 +16,9 @@ public class Messages {
     
     public Messages(Host me, List<Config> configs, Hosts hosts) {
         Messages.configs = configs;
+        Messages.hosts = hosts;
+        Messages.me = me;
+        
         Messages.delivered = new HashMap<Host, ArrayList<Message>>();
         Messages.sent = new HashMap<Host, ArrayList<Message>>();
         Messages.messages = new HashMap<Host, ArrayList<Message>>();
@@ -61,6 +64,14 @@ public class Messages {
         }
 
         return false;
+    }
+
+    public void putMessagesInMap(Message m) {
+        for (Host host: hosts.getHosts()) {
+            if (!host.equals(me)) {
+                putMessageInMap(messages, host, m.getCopy());
+            }
+        }
     }
 
     public boolean isMessageInMap(HashMap<Host, ArrayList<Message>> map, Host from, Message message) {

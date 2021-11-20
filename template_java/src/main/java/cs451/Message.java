@@ -19,6 +19,13 @@ public class Message {
         this.receivedAck = false;
     }
 
+    public Message(MessageType type, Host from, String content, boolean receivedAck) {
+        this.type = type;
+        this.from = from;
+        this.content = content;
+        this.receivedAck = receivedAck;
+    }
+
     public Message(String message, Hosts hosts) {
         String[] messageComponents = message.split("/");
         if (messageComponents.length == 3) {
@@ -46,6 +53,10 @@ public class Message {
         return this.type;
     }
 
+    public Host getHost() {
+        return this.from;
+    }
+
     public String getContent() {
         return this.content;
     }
@@ -60,6 +71,18 @@ public class Message {
 
     public void setReceivedAck(boolean bool) {
         this.receivedAck = bool;
+    }
+
+    public Message getCopy() {
+        MessageType type = this.getType();
+        Host from = this.getHost();
+        String content = new String(this.getContent());
+        boolean receivedAck = this.getReceivedAck();
+
+        Message newM = new Message(type, from, content, receivedAck);
+
+        return newM;
+
     }
 
     // Compare Message objects
