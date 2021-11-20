@@ -38,6 +38,11 @@ public class Messages {
                 i++;
             }
         }
+
+        // Initialize delivered for each host
+        for (Host host: hosts.getHosts()) {
+            Messages.delivered.put(host, new ArrayList<Message>());
+        }
     }
 
     /**
@@ -67,11 +72,19 @@ public class Messages {
         return false;
     }
 
-    public void putMessagesInMap(Message m) {
+    /**
+     * Puts copy of m in messages map
+     * @param m
+     */
+    public void putMessagesInMap(Host from, Message m) {
+        // Put message in messages for each host
         for (Host host: hosts.getHosts()) {
-            if (!host.equals(me)) {
-                putMessageInMap(messages, host, m.getCopy());
-            }
+            Message copy = m.getCopy();
+            if (host.equals(me) || host.equals(from)) {
+                // If host is me, update ack, as I do not need to send to myself
+                copy.setReceivedAck(true);
+            } 
+            putMessageInMap(messages, host, copy);
         }
     }
 

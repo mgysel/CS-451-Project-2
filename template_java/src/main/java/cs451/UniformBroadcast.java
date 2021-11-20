@@ -42,14 +42,13 @@ public class UniformBroadcast extends Thread implements MyEventListener {
         boolean firstBroadcast = true;
         while (true) {
             // For Host in config (including me)
-            for (Config config: configs) {
-                Host peer = hosts.getHostById(config.getId());
+            for (Host host: hosts.getHosts()) {
                 // Send all messages
-                List<Message> msgList = messages.getMessages().get(peer);
+                List<Message> msgList = messages.getMessages().get(host);
                 if (msgList != null) {
                     for (Message m: msgList) {
                         if (m.getReceivedAck() == false) {
-                            pl.send(peer, m);
+                            pl.send(host, m);
                             output.writeBroadcast(m, firstBroadcast);
                         }
                     }
@@ -86,7 +85,7 @@ public class UniformBroadcast extends Thread implements MyEventListener {
                     if (message.getType() == MessageType.BROADCAST) {
                         // If Broadcast from someone else, put in messages
                         if (!from.equals(me)) {
-                            messages.putMessagesInMap(message);
+                            messages.putMessagesInMap(from, message);
                         }
                         
                         // Send ack back, even if already delivered
