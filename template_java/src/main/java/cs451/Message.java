@@ -85,6 +85,14 @@ public class Message {
 
     }
 
+    public static boolean isValidMessage(String message) {
+        String[] messageComponents = message.split("/");
+        if (messageComponents.length == 3) {
+            return true;
+        }
+        return false;
+    }
+
     // Compare Message objects
     @Override
     public boolean equals(Object o) {

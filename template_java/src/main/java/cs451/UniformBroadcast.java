@@ -73,29 +73,42 @@ public class UniformBroadcast extends Thread implements MyEventListener {
             if (packet != null) {
                 Host from = hosts.getHostByAddress(packet.getAddress(), packet.getPort());
                 String received = new String(packet.getData(), packet.getOffset(),  packet.getLength()).trim();
-                Message message = new Message(received, hosts);
-                System.out.println("***** Inside Receive");
-                System.out.printf("Received: %s\n", received);
-                System.out.println(received == null);
-                System.out.printf("RECEIVED MESSAGE: %s\n", received);
-                System.out.printf("FORMATTED MESSAGE: %s\n", message.toString());
-                System.out.printf("TYPE: %s\n", message.getType());
-                System.out.printf("CONTENT: %s\n", message.getContent());
-                if (message.getType() == MessageType.BROADCAST) {
-                    // Add message to messages for each host, unless already in messages
-                    messages.putMessagesInMap(message);
-
-                    deliver(from, message);
-                    // Send ack back, even if already delivered
-                    Message ack = new Message(MessageType.ACK, me, message.getContent());
-                    pl.send(from, ack);
-                } else if (message.getType() == MessageType.ACK) {
-                    // Process ACK
-                    Message m = new Message(MessageType.BROADCAST, me, message.getContent());
-                    messages.updateAck(from, m);
-                } else {
-                    System.out.println("***** Not proper messages sent");
-                    System.out.printf("Message: %s\n", received);
+                
+                if (Message.isValidMessage(received)) {
+                    Message message = new Message(received, hosts);
+                    System.out.println("***** Inside Receive");
+                    System.out.printf("Received: %s\n", received);
+                    System.out.println(received == null);
+                    System.out.printf("RECEIVED MESSAGE: %s\n", received);
+                    System.out.printf("FORMATTED MESSAGE: %s\n", message.toString());
+                    System.out.printf("TYPE: %s\n", message.getType());
+                    System.out.printf("CONTENT: %s\n", message.getContent());
+                    if (message.getType() == MessageType.BROADCAST) {
+                        // If Broadcast from someone else, put in messages
+                        if (!from.equals(me)) {
+                            messages.putMessagesInMap(message);
+                        }
+                        
+                        // Send ack back, even if already delivered
+                        Message ack = new Message(MessageType.ACK, message.getFrom(), message.getContent());
+                        pl.send(from, ack);
+                    } else if (message.getType() == MessageType.ACK) {
+                        // Process ACK
+                        // Create Broadcast message from ACK
+                        Message m = new Message(MessageType.BROADCAST, message.getFrom(), message.getContent());
+                        
+                        // If new message, deliver
+                        if (messages.putMessageInMap(messages.getDelivered(), from, m)) {
+                            // Update ack in messages
+                            messages.updateAck(from, m);
+                            
+                            // If received ack from all hosts, deliver message
+                            deliver(from, m);
+                        }
+                    } else {
+                        System.out.println("***** Not proper messages sent");
+                        System.out.printf("Message: %s\n", received);
+                    }
                 }
             }
         }
@@ -117,11 +130,11 @@ public class UniformBroadcast extends Thread implements MyEventListener {
     }
 
     private void deliver(Host src, Message m) {
-        if (messages.putMessageInMap(messages.getDelivered(), src, m)) {
-            deliver(src, m);
+        // deliver(src, m);
+        if (messages.isMessageDelivered(m)) {
             output.writeDeliver(src, m);
-            // listener.PerfectLinksDeliver(src, m);
         }
+            // listener.PerfectLinksDeliver(src, m);
     }
 
     @Override

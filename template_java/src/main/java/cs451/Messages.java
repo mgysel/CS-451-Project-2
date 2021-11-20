@@ -3,6 +3,7 @@ package cs451;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Messages {
     static Host me;
@@ -18,7 +19,7 @@ public class Messages {
         Messages.configs = configs;
         Messages.hosts = hosts;
         Messages.me = me;
-        
+
         Messages.delivered = new HashMap<Host, ArrayList<Message>>();
         Messages.sent = new HashMap<Host, ArrayList<Message>>();
         Messages.messages = new HashMap<Host, ArrayList<Message>>();
@@ -153,6 +154,23 @@ public class Messages {
             }
         }
 
+        return true;
+    }
+
+    /**
+     * Checks if received Ack for message from all hosts
+     * @param message
+     * @return
+     */
+    public boolean isMessageDelivered(Message message) {
+        for (Map.Entry<Host, ArrayList<Message>> entry : delivered.entrySet()) {
+            Host host = entry.getKey();
+            ArrayList<Message> hostDelivered = entry.getValue();
+
+            if (!hostDelivered.contains(message)) {
+                return false;
+            }
+        }
         return true;
     }
 
