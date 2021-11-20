@@ -84,7 +84,7 @@ public class Messages {
             }
             msgList.add(m);
             // System.out.println("* MsgList does not contain m");
-            printMap(messages);
+            // printMap(messages);
 
             return true;
         }
@@ -227,7 +227,7 @@ public class Messages {
      * @return
      */
     public boolean canDeliverMessage(Message message) {   
-        System.out.println("***** Inside canDeliverMessage");     
+        // System.out.println("***** Inside canDeliverMessage");     
         // HashMap<Host, ArrayList<Message>> messagesClone = getMessagesClone();
 
         for (Map.Entry<Host, ArrayList<Message>> entry : messages.entrySet()) {
@@ -262,8 +262,8 @@ public class Messages {
             }
         }
 
-        System.out.printf("Can deliver: %s\n", message.toString());
-        printMap(messages);
+        // System.out.printf("Can deliver: %s\n", message.toString());
+        // printMap(messages);
         return true;
 
 

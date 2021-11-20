@@ -34,11 +34,11 @@ public class PerfectLinks extends Thread {
         String content = m.toString();
 
         // TODO: REMOVE
-        try {
-            TimeUnit.SECONDS.sleep(2);
-        } catch (InterruptedException ex) {
-            System.out.printf("Sleep exception: %s\n", ex);
-        }
+        // try {
+        //     TimeUnit.SECONDS.sleep(2);
+        // } catch (InterruptedException ex) {
+        //     System.out.printf("Sleep exception: %s\n", ex);
+        // }
         
 
         if (udp.send(address, content)) {

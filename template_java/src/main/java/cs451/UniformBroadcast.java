@@ -102,7 +102,7 @@ public class UniformBroadcast extends Thread implements MyEventListener {
                         if (!from.equals(me)) {
                             // System.out.println("Putting messages in map");
                             messages.addMessages(from, message);
-                            messages.printMap(messages.getMessages());
+                            // messages.printMap(messages.getMessages());
                         }
 
                         // If only two nodes, need to deliver here
@@ -128,7 +128,7 @@ public class UniformBroadcast extends Thread implements MyEventListener {
                         System.out.printf("Message: %s\n", received);
                     }
 
-                    messages.printMap(messages.getMessages());
+                    // messages.printMap(messages.getMessages());
                 }
             }
         }
@@ -150,7 +150,7 @@ public class UniformBroadcast extends Thread implements MyEventListener {
     }
 
     private void deliver(Host src, Message m) {
-        System.out.println("\n***** Inside deliver");
+        // System.out.println("\n***** Inside deliver");
         // messages.printMap(messages.getMessagesClone());
         
         if (messages.canDeliverMessage(m)) {
