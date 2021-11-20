@@ -3,6 +3,7 @@ package cs451;
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class PerfectLinks extends Thread {
@@ -32,14 +33,22 @@ public class PerfectLinks extends Thread {
         InetSocketAddress address = dest.getAddress();
         String content = m.toString();
 
+        // TODO: REMOVE
+        try {
+            TimeUnit.SECONDS.sleep(2);
+        } catch (InterruptedException ex) {
+            System.out.printf("Sleep exception: %s\n", ex);
+        }
+        
+
         if (udp.send(address, content)) {
-            System.out.println("***** Inside send");
-            System.out.printf("Dest: %d\n", dest.getId());
-            System.out.printf("M: %s\n", m.toString());
+            // System.out.println("***** Inside send");
+            // System.out.printf("Dest: %d\n", dest.getId());
+            // System.out.printf("M: %s\n", m.toString());
             // Update sent map
-            if (m.getType() != MessageType.ACK) {
-                messages.putMessageInMap(messages.getSent(), dest, m);
-            }
+            // if (m.getType() != MessageType.ACK) {
+            //     messages.putMessageInMap(messages.getSent(), dest, m);
+            // }
 
             return true;
         }
@@ -125,11 +134,13 @@ public class PerfectLinks extends Thread {
     }
 
     private void deliver(Host src, Message m) {
-        if (messages.putMessageInMap(messages.getDelivered(), src, m)) {
-            deliver(src, m);
-            writeDeliver(src, m);
-            // listener.PerfectLinksDeliver(src, m);
-        }
+        // if (messages.putMessageInMap(messages.getDelivered(), src, m)) {
+        //     deliver(src, m);
+        //     writeDeliver(src, m);
+        //     // listener.PerfectLinksDeliver(src, m);
+        // } 
+        deliver(src, m);
+        writeDeliver(src, m);
     }
 
     private void writeDeliver(Host p, Message m) {

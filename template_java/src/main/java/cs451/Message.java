@@ -121,7 +121,7 @@ public class Message {
         Message m = (Message) o;
         
         // Compare the data members and return accordingly
-        if (m.getType() == this.getType() && m.getContent().equals(this.getContent())) {
+        if (m.getType() == this.getType() && m.getFrom().equals(this.getFrom()) && m.getContent().equals(this.getContent())) {
             return true;
         }
 
