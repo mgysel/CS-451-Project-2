@@ -11,9 +11,10 @@ public class Output {
         this.outputLock = new ReentrantReadWriteLock();
     }
 
-    public void writeDeliver(Host p, Message m) {
+    public void writeDeliver(Message m) {
+        System.out.println("***** Inside writeDeliver");
         outputLock.writeLock().lock();
-        output = String.format("%sd %s %s\n", output, p.getId(), m.getContent());
+        output = String.format("%sd %s %s\n", output, m.getHost().getId(), m.getContent());
         outputLock.writeLock().unlock();
     }
 

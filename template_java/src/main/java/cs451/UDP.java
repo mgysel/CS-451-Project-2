@@ -33,13 +33,14 @@ public class UDP {
         outBuf = m.getBytes();
 
         // Create packet
-        DatagramPacket packet = new DatagramPacket(outBuf, 0, outBuf.length, dest);
-
         try {
-            // Send
+            DatagramPacket packet = new DatagramPacket(outBuf, 0, outBuf.length, dest);
             socket.send(packet);
         } catch(IOException e) {
-            System.err.println("Client.Send Error: " + e);
+            System.err.println("Client.Send IOException Error: " + e);
+            return false;
+        } catch (IllegalArgumentException e) {
+            System.err.println("Client.Send IllegalArgumentException Error: " + e);
             return false;
         }
         return true;

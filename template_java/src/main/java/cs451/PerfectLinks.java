@@ -33,6 +33,9 @@ public class PerfectLinks extends Thread {
         String content = m.toString();
 
         if (udp.send(address, content)) {
+            System.out.println("***** Inside send");
+            System.out.printf("Dest: %d\n", dest.getId());
+            System.out.printf("M: %s\n", m.toString());
             // Update sent map
             if (m.getType() != MessageType.ACK) {
                 messages.putMessageInMap(messages.getSent(), dest, m);

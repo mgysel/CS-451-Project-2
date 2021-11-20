@@ -11,12 +11,14 @@ public class Message {
     private Host from;
     private String content;
     private boolean receivedAck;
+    private boolean isDelivered;
 
     public Message(MessageType type, Host from, String content) {
         this.type = type;
         this.from = from;
         this.content = content;
         this.receivedAck = false;
+        this.isDelivered = false;
     }
 
     public Message(MessageType type, Host from, String content, boolean receivedAck) {
@@ -71,6 +73,14 @@ public class Message {
 
     public void setReceivedAck(boolean bool) {
         this.receivedAck = bool;
+    }
+
+    public boolean getIsDelivered() {
+        return this.isDelivered;
+    }
+
+    public void setIsDelivered(boolean bool) {
+        this.isDelivered = bool;
     }
 
     public Message getCopy() {

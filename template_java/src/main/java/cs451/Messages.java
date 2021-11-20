@@ -77,11 +77,11 @@ public class Messages {
      * @param m
      */
     public void putMessagesInMap(Host from, Message m) {
-        // Put message in messages for each host
+        // Put message in messages for each host (these are never from me)
         for (Host host: hosts.getHosts()) {
             Message copy = m.getCopy();
             if (host.equals(me) || host.equals(from)) {
-                // If host is me, update ack, as I do not need to send to myself
+                // If host is me or from, update ack, as I do not need to send to myself
                 copy.setReceivedAck(true);
             } 
             putMessageInMap(messages, host, copy);
@@ -154,6 +154,7 @@ public class Messages {
     }
 
     public boolean updateAck(Host from, Message message) {
+        // System.out.println("***** Inside updateAck");
         ArrayList<Message> msgList = messages.get(from);
 
         if (msgList == null) {
@@ -161,7 +162,10 @@ public class Messages {
         } else {
             for (Message m: msgList) {
                 if (m.equals(message)) {
+                    // System.out.println("Updating received ack");
+                    // System.out.println(message.toString());
                     m.setReceivedAck(true);
+                    // System.out.printf("ReceivedAck: %s\n", m.getReceivedAck());
                     break;
                 }
             }
@@ -175,16 +179,43 @@ public class Messages {
      * @param message
      * @return
      */
-    public boolean isMessageDelivered(Message message) {
+    public boolean canDeliverMessage(Message message) {   
+        // System.out.println("***** Inside canDeliverMessage");     
         for (Map.Entry<Host, ArrayList<Message>> entry : delivered.entrySet()) {
             Host host = entry.getKey();
             ArrayList<Message> hostDelivered = entry.getValue();
 
             if (!hostDelivered.contains(message)) {
+                // If does not contain message, cannot deliver message
+                // System.out.println("HostDelivered does not contain message");
                 return false;
+            } else {
+                // If message already delivered, cannot deliver message
+                for (Message m: hostDelivered) {
+                    if (m.equals(message)) {
+                        if (m.getIsDelivered()) {
+                            // System.out.println("Message already delivered");
+                            return false;
+                        }
+                    }
+                }
             }
         }
         return true;
+    }
+
+
+    public void deliverMessage(Message message) {
+        for (Map.Entry<Host, ArrayList<Message>> entry : delivered.entrySet()) {
+            Host host = entry.getKey();
+            ArrayList<Message> hostDelivered = entry.getValue();
+
+            for (Message m: hostDelivered) {
+                if (m.equals(message)) {
+                    m.setIsDelivered(true);
+                }
+            }
+        }
     }
 
     public HashMap<Host, ArrayList<Message>> getSent() {
