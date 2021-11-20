@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.HashMap;
 
-public class UniformBroadcast extends Thread implements MyEventListener {
+public class FIFO extends Thread implements MyEventListener {
     private PerfectLinks pl;
     private Host me;
     public Hosts hosts;
@@ -19,7 +19,7 @@ public class UniformBroadcast extends Thread implements MyEventListener {
 
     ReentrantLock lock = new ReentrantLock();
     
-    public UniformBroadcast(PerfectLinks pl) {
+    public FIFO(PerfectLinks pl) {
         this.pl = pl;
         this.pl.setMyEventListener(this);
         this.configs = pl.getConfigs();

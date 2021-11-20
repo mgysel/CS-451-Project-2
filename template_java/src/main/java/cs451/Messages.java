@@ -38,7 +38,7 @@ public class Messages {
             int i = 1;
             while (i <= config.getM()) {
                 // Put each message in map
-                Message message = new Message(MessageType.BROADCAST, me, Integer.toString(i));
+                Message message = new Message(i, MessageType.BROADCAST, me, Integer.toString(i));
                 addMessage(receiver, message);
                 i++;
             }

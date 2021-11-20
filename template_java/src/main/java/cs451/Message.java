@@ -7,13 +7,15 @@ enum MessageType {
 }
 
 public class Message {
+    private int sequenceNumber;
     private MessageType type;
     private Host from;
     private String content;
     private boolean receivedAck;
     private boolean isDelivered;
 
-    public Message(MessageType type, Host from, String content) {
+    public Message(int sequenceNumber, MessageType type, Host from, String content) {
+        this.sequenceNumber = sequenceNumber;
         this.type = type;
         this.from = from;
         this.content = content;
@@ -21,7 +23,8 @@ public class Message {
         this.isDelivered = false;
     }
 
-    public Message(MessageType type, Host from, String content, boolean receivedAck) {
+    public Message(int sequenceNumber, MessageType type, Host from, String content, boolean receivedAck) {
+        this.sequenceNumber = sequenceNumber;
         this.type = type;
         this.from = from;
         this.content = content;
@@ -30,8 +33,16 @@ public class Message {
 
     public Message(String message, Hosts hosts) {
         String[] messageComponents = message.split("/");
-        if (messageComponents.length == 3) {
-            if (messageComponents[0].equals("A")) {
+        if (messageComponents.length == 4) {
+            try {
+                int sequenceNumber = Integer.parseInt(messageComponents[1]);
+                this.sequenceNumber = sequenceNumber;
+            } catch (NumberFormatException e) {
+                System.out.printf("Cannot convert message because ID is not an integer: ", e);
+            } catch (NullPointerException e) {
+                System.out.printf("Cannot convert message because ID is a null pointer: ", e);
+            }
+            if (messageComponents[1].equals("A")) {
                 this.type = MessageType.ACK;
             } else if (messageComponents[0].equals("B")) {
                 this.type = MessageType.BROADCAST;
@@ -39,57 +50,26 @@ public class Message {
                 this.type = MessageType.FORWARD;
             }
             try {
-                Integer id = Integer.parseInt(messageComponents[1]);
+                Integer id = Integer.parseInt(messageComponents[2]);
                 this.from = hosts.getHostById(id);
             } catch (NumberFormatException e) {
                 System.out.printf("Cannot convert message because ID is not an integer: ", e);
             } catch (NullPointerException e) {
                 System.out.printf("Cannot convert message because ID is a null pointer: ", e);
             }
-            this.content = messageComponents[2];
+            this.content = messageComponents[3];
             this.receivedAck = false;
         }
     }
 
-    public MessageType getType() {
-        return this.type;
-    }
-
-    public Host getHost() {
-        return this.from;
-    }
-
-    public String getContent() {
-        return this.content;
-    }
-
-    public Host getFrom() {
-        return this.from;
-    }
-
-    public boolean getReceivedAck() {
-        return this.receivedAck;
-    }
-
-    public void setReceivedAck(boolean bool) {
-        this.receivedAck = bool;
-    }
-
-    public boolean getIsDelivered() {
-        return this.isDelivered;
-    }
-
-    public void setIsDelivered(boolean bool) {
-        this.isDelivered = bool;
-    }
-
     public Message getCopy() {
+        int sequenceNumber = this.getSequenceNumber();
         MessageType type = this.getType();
         Host from = this.getHost();
         String content = new String(this.getContent());
         boolean receivedAck = this.getReceivedAck();
 
-        Message newM = new Message(type, from, content, receivedAck);
+        Message newM = new Message(sequenceNumber, type, from, content, receivedAck);
 
         return newM;
 
@@ -143,5 +123,41 @@ public class Message {
         }
 
         return output;
+    }
+
+    public int getSequenceNumber() {
+        return this.sequenceNumber;
+    }
+
+    public MessageType getType() {
+        return this.type;
+    }
+
+    public Host getHost() {
+        return this.from;
+    }
+
+    public String getContent() {
+        return this.content;
+    }
+
+    public Host getFrom() {
+        return this.from;
+    }
+
+    public boolean getReceivedAck() {
+        return this.receivedAck;
+    }
+
+    public void setReceivedAck(boolean bool) {
+        this.receivedAck = bool;
+    }
+
+    public boolean getIsDelivered() {
+        return this.isDelivered;
+    }
+
+    public void setIsDelivered(boolean bool) {
+        this.isDelivered = bool;
     }
 }
