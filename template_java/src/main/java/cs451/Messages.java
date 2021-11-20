@@ -17,7 +17,7 @@ public class Messages {
     static HashMap<Host, ArrayList<Message>> sent;
     static HashMap<Host, ArrayList<Message>> messages;
     static HashMap<Host, ArrayList<Message>> ack;
-    private HashMap<Host, ArrayList<Message>> toDeliver;
+    private HashMap<Host, ArrayList<Message>> canDeliver;
 
     private final ReentrantReadWriteLock messagesLock = new ReentrantReadWriteLock();
     ReentrantLock lock = new ReentrantLock();
@@ -31,7 +31,7 @@ public class Messages {
         Messages.sent = new HashMap<Host, ArrayList<Message>>();
         Messages.messages = new HashMap<Host, ArrayList<Message>>();
         Messages.ack = new HashMap<Host, ArrayList<Message>>();
-        this.toDeliver = new HashMap<Host, ArrayList<Message>>();
+        this.canDeliver = new HashMap<Host, ArrayList<Message>>();
 
         // Initialize messages with messages to send
         for (Config config: configs) {
@@ -50,7 +50,7 @@ public class Messages {
         // Initialize delivered for each host
         for (Host host: hosts.getHosts()) {
             Messages.delivered.put(host, new ArrayList<Message>());
-            this.toDeliver.put(host, new ArrayList<Message>());
+            this.canDeliver.put(host, new ArrayList<Message>());
         }
     }
 
@@ -207,7 +207,7 @@ public class Messages {
             ArrayList<Message> msgList = messages.get(h);
 
             if (msgList == null) {
-                return false;
+                break;
             } else {
                 for (Message m: msgList) {
                     if (m.equals(message)) {
@@ -219,6 +219,13 @@ public class Messages {
                         // printMap(delivered);
                     }
                 }
+            }
+        }
+
+        ArrayList<Message> deliverList = canDeliver.get(message.getHost());
+        for (Message m: deliverList) {
+            if (m.equals(message)) {
+                m.setIsDelivered(true);
             }
         }
 
@@ -271,10 +278,16 @@ public class Messages {
             }
             majority = numAcks / total;
 
-            // If majority, update ACKs for all
+            // If majority, update ACKs for all, add to canDeliver
             if (majority > 0.5) {
+                int i = 0;
                 for (Message m: equalMessages) {
                     m.setReceivedAck(true);
+                    if (i == 0) {
+                        ArrayList<Message> deliverList = canDeliver.get(m.getHost());
+                        deliverList.add(m.getCopy());
+                    }
+                    i++;
                 }
             }
         }
@@ -367,6 +380,10 @@ public class Messages {
 
     public HashMap<Host, ArrayList<Message>> getMessages() {
         return Messages.messages;
+    }
+
+    public HashMap<Host, ArrayList<Message>> getCanDeliver() {
+        return this.canDeliver;
     }
 
     public HashMap<Host, ArrayList<Message>> getMessagesClone() {

@@ -2,6 +2,7 @@ package cs451;
 
 import java.net.DatagramPacket;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.HashMap;
@@ -154,15 +155,27 @@ public class FIFO extends Thread implements MyEventListener {
         // messages.printMap(messages.getMessagesClone());
         
         if (messages.canDeliverMessage(m)) {
-            // System.out.printf("Can deliver message: %s\n", m.toString());
-            // System.out.printf("Hpst: %s\n", src);
-            // System.out.printf("M: %s\n", m.toString());
-            messages.updateDelivered(m);
-            output.writeDeliver(m);
-        } else {
-            // System.out.printf("Cannot deliver message: %s\n", m.toString());
+            // Deliver all messages in canDeliver
+            ArrayList<Message> msgList = messages.getCanDeliver().get(m.getFrom());
+            Collections.sort(msgList);
+            
+            int i = 1;
+            int total = msgList.size();
+            while(i <= total) {
+                Message thisMsg = msgList.get(i-1);
+                if (thisMsg.getSequenceNumber() != i) {
+                    break;
+                }
+                if (!thisMsg.getIsDelivered()) {
+                    // System.out.printf("Can deliver message: %s\n", m.toString());
+                    // System.out.printf("Hpst: %s\n", src);
+                    // System.out.printf("M: %s\n", m.toString());
+                    messages.updateDelivered(thisMsg);
+                    output.writeDeliver(thisMsg);
+                }
+                i++;
+            }
         }
-            // listener.PerfectLinksDeliver(src, m);
     }
 
     @Override
