@@ -109,11 +109,11 @@ public class PerfectLinks extends Thread {
                 if (message.getType() == MessageType.BROADCAST) {
                     deliver(from, message);
                     // Send ack back, even if already delivered
-                    Message ack = new Message(message.getSequenceNumber(), MessageType.ACK, me, message.getContent());
+                    Message ack = new Message(MessageType.ACK, message.getSequenceNumber(), me, message.getContent());
                     send(from, ack);
                 } else if (message.getType() == MessageType.ACK) {
                     // Process ACK
-                    Message m = new Message(message.getSequenceNumber(), MessageType.BROADCAST, me, message.getContent());
+                    Message m = new Message(MessageType.BROADCAST, message.getSequenceNumber(), me, message.getContent());
                     messages.updateAck(from, m);
                 } else {
                     System.out.println("***** Not proper messages sent");

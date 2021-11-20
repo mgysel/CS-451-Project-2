@@ -38,7 +38,7 @@ public class Messages {
             int i = 1;
             while (i <= config.getM()) {
                 // Put each message in map
-                Message message = new Message(i, MessageType.BROADCAST, me, Integer.toString(i));
+                Message message = new Message(MessageType.BROADCAST, i, me, Integer.toString(i));
                 addMessage(receiver, message);
                 i++;
             }
@@ -222,14 +222,20 @@ public class Messages {
     }
 
     /**
-     * Checks if received Ack for message from all hosts
+     * Checks if received Ack for message from majority of hosts
      * @param message
      * @return
      */
     public boolean canDeliverMessage(Message message) {   
+        System.out.println("Inside receivedMajority");
+
         // System.out.println("***** Inside canDeliverMessage");     
         // HashMap<Host, ArrayList<Message>> messagesClone = getMessagesClone();
+        double numAcks = 0.0;
+        double total = (double) hosts.getHosts().size();
 
+        // If each host does not have
+        boolean isDelivered = false;
         for (Map.Entry<Host, ArrayList<Message>> entry : messages.entrySet()) {
             // Check that each host has this message
             // Message must have received an ack and not already be delivered
@@ -237,8 +243,6 @@ public class Messages {
             ArrayList<Message> hostMessages = entry.getValue();
             // System.out.printf("* CDM: Host: %s\n", host.getId());
 
-            // If each host does not have
-            boolean receivedAck = false;
             for (Message m: hostMessages) {
                 // System.out.printf("CDM: Message Comparison\n");
                 // System.out.printf("M: %s\n", m.toString());
@@ -247,73 +251,27 @@ public class Messages {
                     // System.out.printf("%s equals %s\n", m.toString(), message.toString());
                     // System.out.printf("Ack: %s\n", m.getReceivedAck());
                     // System.out.printf("Delivered: %s\n", m.getIsDelivered());
-                    if (m.getReceivedAck() && !m.getIsDelivered()) {
+                    if (m.getReceivedAck()) {
                         // System.out.println("Received ack and not delivered");
-                        receivedAck = true;
+                        numAcks += 1.0;
+                    }
+                    if (m.getIsDelivered()) {
+                        isDelivered = true;
                     }
                 } else {
                     // System.out.printf("%s does not equal %s\n", m.toString(), message.toString());
                 }
             }
-            if (!receivedAck) {
-                // System.out.println("CDM: Did not receive ack");
-                // System.out.printf("CDM: message: %s\n", message);
-                return false;
-            }
+        }
+
+        if (!isDelivered && (numAcks / total > 0.5)) {
+            return true;
         }
 
         // System.out.printf("Can deliver: %s\n", message.toString());
         // printMap(messages);
-        return true;
-
-
-        //     if (!hostDelivered.contains(message)) {
-        //         boolean containsMessage = false;
-
-        //         // If does not contain message, cannot deliver message
-        //         // System.out.println("HostDelivered does not contain message");
-        //         return false;
-        //     } else {
-        //         // If message already delivered, cannot deliver message
-        //         for (Message m: hostDelivered) {
-        //             if (m.equals(message)) {
-        //                 if (m.getIsDelivered()) {
-        //                     // System.out.println("Message already delivered");
-        //                     return false;
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
-        // return true;
+        return false;
     }
-
-
-    // public void deliverMessage(Message message) {
-    //     // for (Map.Entry<Host, ArrayList<Message>> entry : delivered.entrySet()) {
-    //     //     Host host = entry.getKey();
-    //     //     ArrayList<Message> hostDelivered = entry.getValue();
-
-    //     //     for (Message m: hostDelivered) {
-    //     //         if (m.equals(message)) {
-    //     //             m.setIsDelivered(true);
-    //     //         }
-    //     //     }
-    //     // }
-    //     for (Map.Entry<Host, ArrayList<Message>> entry : messages.entrySet()) {
-    //         Host host = entry.getKey();
-    //         ArrayList<Message> hostMessages = entry.getValue();
-
-    //         for (Message m: hostMessages) {
-    //             if (m.equals(message)) {
-    //                 System.out.println("Setting message to isDelivered\n");
-    //                 System.out.printf("B Delivered? %s\n", m.getIsDelivered());
-    //                 m.setIsDelivered(true);
-    //                 System.out.printf("A Delivered? %s\n", m.getIsDelivered());
-    //             }
-    //         }
-    //     }
-    // }
 
     public void printMap(HashMap<Host, ArrayList<Message>> map) {
         lock.lock();

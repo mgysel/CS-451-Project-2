@@ -7,23 +7,23 @@ enum MessageType {
 }
 
 public class Message {
-    private int sequenceNumber;
     private MessageType type;
+    private int sequenceNumber;
     private Host from;
     private String content;
     private boolean receivedAck;
     private boolean isDelivered;
 
-    public Message(int sequenceNumber, MessageType type, Host from, String content) {
-        this.sequenceNumber = sequenceNumber;
+    public Message(MessageType type, int sequenceNumber, Host from, String content) {
         this.type = type;
+        this.sequenceNumber = sequenceNumber;
         this.from = from;
         this.content = content;
         this.receivedAck = false;
         this.isDelivered = false;
     }
 
-    public Message(int sequenceNumber, MessageType type, Host from, String content, boolean receivedAck) {
+    public Message(MessageType type, int sequenceNumber, Host from, String content, boolean receivedAck) {
         this.sequenceNumber = sequenceNumber;
         this.type = type;
         this.from = from;
@@ -34,6 +34,13 @@ public class Message {
     public Message(String message, Hosts hosts) {
         String[] messageComponents = message.split("/");
         if (messageComponents.length == 4) {
+            if (messageComponents[0].equals("A")) {
+                this.type = MessageType.ACK;
+            } else if (messageComponents[0].equals("B")) {
+                this.type = MessageType.BROADCAST;
+            } else if (messageComponents[0].equals("F")) {
+                this.type = MessageType.FORWARD;
+            }
             try {
                 int sequenceNumber = Integer.parseInt(messageComponents[1]);
                 this.sequenceNumber = sequenceNumber;
@@ -41,13 +48,6 @@ public class Message {
                 System.out.printf("Cannot convert message because ID is not an integer: ", e);
             } catch (NullPointerException e) {
                 System.out.printf("Cannot convert message because ID is a null pointer: ", e);
-            }
-            if (messageComponents[1].equals("A")) {
-                this.type = MessageType.ACK;
-            } else if (messageComponents[0].equals("B")) {
-                this.type = MessageType.BROADCAST;
-            } else if (messageComponents[0].equals("F")) {
-                this.type = MessageType.FORWARD;
             }
             try {
                 Integer id = Integer.parseInt(messageComponents[2]);
@@ -69,7 +69,7 @@ public class Message {
         String content = new String(this.getContent());
         boolean receivedAck = this.getReceivedAck();
 
-        Message newM = new Message(sequenceNumber, type, from, content, receivedAck);
+        Message newM = new Message(type, sequenceNumber, from, content, receivedAck);
 
         return newM;
 
@@ -77,7 +77,7 @@ public class Message {
 
     public static boolean isValidMessage(String message) {
         String[] messageComponents = message.split("/");
-        if (messageComponents.length == 3) {
+        if (messageComponents.length == 4) {
             return true;
         }
         return false;
@@ -101,7 +101,7 @@ public class Message {
         Message m = (Message) o;
         
         // Compare the data members and return accordingly
-        if (m.getType() == this.getType() && m.getFrom().equals(this.getFrom()) && m.getContent().equals(this.getContent())) {
+        if (m.getType() == this.getType() && m.getSequenceNumber() == this.getSequenceNumber() && m.getFrom().equals(this.getFrom()) && m.getContent().equals(this.getContent())) {
             return true;
         }
 
@@ -119,7 +119,7 @@ public class Message {
             } else if (this.type == MessageType.FORWARD) {
                 output += "F";
             }
-            output = String.format("%s/%d/%s", output, this.from.getId(), this.content);
+            output = String.format("%s/%d/%d/%s", output, this.getSequenceNumber(), this.from.getId(), this.content);
         }
 
         return output;

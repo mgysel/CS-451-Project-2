@@ -60,7 +60,8 @@ public class UniformBroadcast extends Thread implements MyEventListener {
                     // System.out.printf("MsgList length: %d\n", msgList.size());
                     for (Message m: msgList) {
                         if (m.getReceivedAck() == false) {
-                            System.out.println("\n***** Sending message\n");
+                            System.out.println("\n***** Sending message");
+                            System.out.printf("%s\n", m.toString());
                             pl.send(host, m);
                             output.writeBroadcast(m, firstBroadcast);
                         }
@@ -109,12 +110,12 @@ public class UniformBroadcast extends Thread implements MyEventListener {
                         deliver(from, message);
                         
                         // Send ack back, even if already delivered
-                        Message ack = new Message(message.getSequenceNumber(), MessageType.ACK, message.getFrom(), message.getContent());
+                        Message ack = new Message(MessageType.ACK, message.getSequenceNumber(), message.getFrom(), message.getContent());
                         pl.send(from, ack);
                     } else if (message.getType() == MessageType.ACK) {
                         // Process ACK
                         // Create Broadcast message from ACK
-                        Message m = new Message(message.getSequenceNumber(), MessageType.BROADCAST, message.getFrom(), message.getContent());
+                        Message m = new Message(MessageType.BROADCAST, message.getSequenceNumber(), message.getFrom(), message.getContent());
                         
                         // Put message in delivered, unless already in
                         // messages.putMessageInMap(messages.getDelivered(), from, m);

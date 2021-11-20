@@ -37,6 +37,16 @@ public class Main {
         writeOutput(output, filename);
     }
 
+    private static void handleSignal(FIFO fifo, String filename) {
+        //immediately stop network packet processing
+        System.out.println("Immediately stopping network packet processing.");
+        String output = fifo.close();
+
+        //write/flush output file if necessary
+        System.out.println("Writing output.");
+        writeOutput(output, filename);
+    }
+
     private static void initSignalHandlers(PerfectLinks pl, String filename) {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
@@ -51,6 +61,15 @@ public class Main {
             @Override
             public void run() {
                 handleSignal(ub, filename);
+            }
+        });
+    }
+
+    private static void initSignalHandlers(FIFO fifo, String filename) {
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                handleSignal(fifo, filename);
             }
         });
     }
@@ -154,8 +173,9 @@ public class Main {
         System.out.println("Doing some initialization\n");
         PerfectLinks pl = new PerfectLinks(me, configs, hosts);
         // initSignalHandlers(pl, parser.output());
-        UniformBroadcast ub = new UniformBroadcast(pl);
-        initSignalHandlers(ub, parser.output());
+        // UniformBroadcast ub = new UniformBroadcast(pl);
+        FIFO fifo = new FIFO(pl);
+        initSignalHandlers(fifo, parser.output());
 
         System.out.println("Broadcasting and delivering messages...\n");
 
@@ -164,8 +184,8 @@ public class Main {
         // *********************************************************************
         // pl.start();
         // pl.sendAll();
-        ub.start();
-        ub.broadcast();
+        fifo.start();
+        fifo.broadcast();
 
         // *********************************************************************
 
