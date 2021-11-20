@@ -90,14 +90,16 @@ public class Message {
     @Override
     public String toString() {
         String output = "";
-        if (this.type == MessageType.BROADCAST) {
-            output += "B";
-        } else if (this.type == MessageType.ACK) {
-            output += "A";
-        } else if (this.type == MessageType.FORWARD) {
-            output += "F";
+        if (this != null) {
+            if (this.type == MessageType.BROADCAST) {
+                output += "B";
+            } else if (this.type == MessageType.ACK) {
+                output += "A";
+            } else if (this.type == MessageType.FORWARD) {
+                output += "F";
+            }
+            output = String.format("%s/%d/%s", output, this.from.getId(), this.content);
         }
-        output = String.format("%s/%d/%s", output, this.from.getId(), this.content);
 
         return output;
     }

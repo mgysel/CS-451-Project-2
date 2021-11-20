@@ -46,13 +46,13 @@ public class Parser {
             help();
         }
 
-        if (!plConfigParser.populate(args[Constants.CONFIG_VALUE])) {
-            help();
-        }
-
-        // if (!bebConfigParser.populate(args[Constants.CONFIG_VALUE])) {
+        // if (!plConfigParser.populate(args[Constants.CONFIG_VALUE])) {
         //     help();
         // }
+
+        if (!bebConfigParser.populate(args[Constants.CONFIG_VALUE])) {
+            help();
+        }
     }
 
     private void help() {
@@ -80,7 +80,7 @@ public class Parser {
         return plConfigParser.getConfigs();
     }
 
-    public String ubConfigPath() {
+    public String bebConfigPath() {
         return bebConfigParser.getPath();
     }
 

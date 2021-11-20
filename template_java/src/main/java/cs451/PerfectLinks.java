@@ -29,7 +29,6 @@ public class PerfectLinks extends Thread {
     }
 
     public boolean send(Host dest, Message m) {
-        System.out.println("Inside send");
         InetSocketAddress address = dest.getAddress();
         String content = m.toString();
 
@@ -50,6 +49,7 @@ public class PerfectLinks extends Thread {
      * Do not send messages to self
      */
     public void sendAll() {
+        System.out.println("Inside SendAll");
         
         // Send messages until we receive all acks
         boolean firstBroadcast = true;

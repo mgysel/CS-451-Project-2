@@ -76,6 +76,8 @@ public class Main {
 
     private static List<Config> getBroadcastConfigs(Parser parser, Hosts hosts) {
         int m = parser.bebConfigM();
+        System.out.println("Get Broadcast Configs");
+        System.out.println(m);
         List<Config> configs = new ArrayList<Config>();
         for (Host host: hosts.getHosts()) {
             Config config = new Config(m, host.getId());
@@ -112,7 +114,7 @@ public class Main {
     private static void printConfigs(Parser parser, List<Config> configs) {
         System.out.println("Path to config:");
         System.out.println("===============");
-        System.out.println(parser.plConfigPath() + "\n");
+        System.out.println(parser.bebConfigPath() + "\n");
         System.out.println("List of configs is:");
         System.out.println("==========================");
         for (Config config: configs) {
