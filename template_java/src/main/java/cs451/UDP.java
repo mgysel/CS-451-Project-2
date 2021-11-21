@@ -56,13 +56,6 @@ public class UDP {
             socket.receive(packet);
 
             return packet;
-            // InetAddress address = packet.getAddress();
-            // int port = packet.getPort();
-            // packet = new DatagramPacket(inBuf, inBuf.length, address, port);
-            
-            // String message = new String(packet.getData(), packet.getOffset(),  packet.getLength()).trim();
-            // inBuf = new byte[256];
-            // Arrays.fill(inBuf,(byte)0);
         } catch (SocketTimeoutException e) {
             // Do nothing
             return null;

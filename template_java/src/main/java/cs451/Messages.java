@@ -123,7 +123,7 @@ public class Messages {
         for (Host host: hosts.getHosts()) {
             // System.out.printf("Host: %s\n", host.getId());
             Message copy = m.getCopy();
-            if (host.equals(me) || host.equals(from)) {
+            if (host.equals(me) || host.equals(from) || host.equals(m.getHost())) {
                 // If host is me or from, update ack, as I do not need to send to myself
                 copy.setReceivedAck(true);
             } 
@@ -157,13 +157,17 @@ public class Messages {
     }
 
     public boolean updateAck(Host from, Message message) {
-        // System.out.println("***** Inside updateAck");
+        System.out.println("***** Inside updateAck");
         Message m = getOGMessage(from, message);
         if (m != null) {
+            System.out.printf("updateAck: Before update: %s\n", m.getReceivedAck());
             writeLock.lock();
             m.setReceivedAck(true);
             writeLock.unlock();
+            System.out.printf("updateAck: After update: %s\n", m.getReceivedAck());
             return true;
+        } else {
+            System.out.println("updateAck: Message is null");
         }
 
         return false;
@@ -280,20 +284,6 @@ public class Messages {
         }
 
         return deliverList;
-    }
-
-    public List<Message> getPrevMessages(Message message) {
-        // Get all messages with lower sequence numbers
-        List<Message> prevMessages = new ArrayList<Message>();
-        int i = 1;
-        while (i < message.getSequenceNumber()) {
-            Message copy = message.getCopy();
-            copy.setSequenceNumber(i);
-            prevMessages.add(copy);
-        }
-        prevMessages.add(message);
-
-        return prevMessages;
     }
 
     public void printMap(HashMap<Host, ArrayList<Message>> map) {
