@@ -157,18 +157,14 @@ public class Messages {
     }
 
     public boolean updateAck(Host from, Message message) {
-        System.out.println("***** Inside updateAck");
+        // System.out.println("***** Inside updateAck");
         Message m = getOGMessage(from, message);
         if (m != null) {
-            System.out.printf("updateAck: Before update: %s\n", m.getReceivedAck());
             writeLock.lock();
             m.setReceivedAck(true);
             writeLock.unlock();
-            System.out.printf("updateAck: After update: %s\n", m.getReceivedAck());
             return true;
-        } else {
-            System.out.println("updateAck: Message is null");
-        }
+        } 
 
         return false;
     }

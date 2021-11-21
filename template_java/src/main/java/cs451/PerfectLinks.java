@@ -33,7 +33,7 @@ public class PerfectLinks extends Thread {
         InetSocketAddress address = dest.getAddress();
         String content = m.toString();
 
-        // TODO: REMOVE
+        // NOTE: For testing
         // try {
         //     TimeUnit.SECONDS.sleep(2);
         // } catch (InterruptedException ex) {
@@ -42,14 +42,6 @@ public class PerfectLinks extends Thread {
         
 
         if (udp.send(address, content)) {
-            System.out.println("***** Inside send");
-            System.out.printf("Dest: %d\n", dest.getId());
-            System.out.printf("M: %s\n", m.toString());
-            // Update sent map
-            // if (m.getType() != MessageType.ACK) {
-            //     messages.putMessageInMap(messages.getSent(), dest, m);
-            // }
-
             return true;
         }
 

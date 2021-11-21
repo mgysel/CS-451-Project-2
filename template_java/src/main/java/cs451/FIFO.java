@@ -56,9 +56,6 @@ public class FIFO extends Thread {
                     for (Message m: msgList) {
                         // System.out.println("***** Inside Iterator");
                         if (!m.getReceivedAck()) {
-                            System.out.println("\n***** Sending message\n");
-                            System.out.printf("Message: %s\n", m.toString());
-                            System.out.printf("Received ack? %s\n", m.getReceivedAck());
                             pl.send(host, m);
                             output.writeBroadcast(m, firstBroadcast);
                         }
@@ -87,9 +84,9 @@ public class FIFO extends Thread {
                 if (Message.isValidMessage(received)) {
                     Message message = new Message(received, hosts);
 
-                    System.out.println("***** Inside Receive");
-                    System.out.printf("Received: %s\n", received);
-                    System.out.printf("From: %d\n", from.getId());
+                    // System.out.println("***** Inside Receive");
+                    // System.out.printf("Received: %s\n", received);
+                    // System.out.printf("From: %d\n", from.getId());
                     // System.out.println(received == null);
                     // System.out.printf("RECEIVED MESSAGE: %s\n", received);
                     // System.out.printf("FORMATTED MESSAGE: %s\n", message.toString());
@@ -120,11 +117,7 @@ public class FIFO extends Thread {
                         // Put message in delivered, unless already in
                         // messages.putMessageInMap(messages.getDelivered(), from, m);
                         // Update ack in messages
-                        Message ogM = messages.getOGMessage(from, m);
-
-                        System.out.printf("BEFORE: Received ack? %s\n", ogM.getReceivedAck());
                         messages.updateAck(from, m);
-                        System.out.printf("AFTER: Received ack? %s\n", ogM.getReceivedAck());
 
                         // If received ack from majority of hosts, deliver message
                         deliver(from, m);
