@@ -35,7 +35,7 @@ public class FIFO extends Thread {
      * Do not send messages to self
      */
     public void broadcast() {
-        // System.out.println("Inside SendAll");
+        // System.out.println("Inside Broadcast");
         
         // Send messages until we receive all acks
         boolean firstBroadcast = true;
@@ -44,17 +44,10 @@ public class FIFO extends Thread {
 
             // For Host in config (including me)
             for (Host host: hosts.getHosts()) {
-                // System.out.printf("Host: %s\n", host.getId());
-                // System.out.printf("Host length: %d\n", hosts.getHosts().size());
-                // Send all messages
-                // List<Message> msgList = messages.getMessages().get(host);
+                // Send each message have not received an ack for
                 List<Message> msgList = messagesClone.get(host);
                 if (msgList != null) {
-                    // System.out.println("Message list is not null");
-                    // System.out.printf("MstList: %s\n", msgList);
-                    // System.out.printf("MsgList length: %d\n", msgList.size());
                     for (Message m: msgList) {
-                        // System.out.println("***** Inside Iterator");
                         if (!m.getReceivedAck()) {
                             pl.send(host, m);
                             output.writeBroadcast(m, firstBroadcast);
@@ -66,14 +59,14 @@ public class FIFO extends Thread {
         }
     }
 
-    // NOTE: start is used to run a thread asynchronously
+    /**
+     * Receive packets, process
+     */
     public void run() {
         // System.out.println("INSIDE RUN");
 
         running = true;
-
         while (running) {
-
             // Receive Packet
             DatagramPacket packet = udp.receive();
 
@@ -87,11 +80,6 @@ public class FIFO extends Thread {
                     // System.out.println("***** Inside Receive");
                     // System.out.printf("Received: %s\n", received);
                     // System.out.printf("From: %d\n", from.getId());
-                    // System.out.println(received == null);
-                    // System.out.printf("RECEIVED MESSAGE: %s\n", received);
-                    // System.out.printf("FORMATTED MESSAGE: %s\n", message.toString());
-                    // System.out.printf("TYPE: %s\n", message.getType());
-                    // System.out.printf("CONTENT: %s\n", message.getContent());
                     if (message.getType() == MessageType.BROADCAST) {
                         // If Broadcast from someone else, put in messages
                         if (!from.equals(me)) {
@@ -110,12 +98,9 @@ public class FIFO extends Thread {
                             pl.send(ack.getFrom(), ack);
                         }
                     } else if (message.getType() == MessageType.ACK) {
-                        // Process ACK
                         // Create Broadcast message from ACK
                         Message m = new Message(MessageType.BROADCAST, message.getSequenceNumber(), message.getFrom(), message.getContent());
                         
-                        // Put message in delivered, unless already in
-                        // messages.putMessageInMap(messages.getDelivered(), from, m);
                         // Update ack in messages
                         messages.updateAck(from, m);
 
@@ -125,25 +110,17 @@ public class FIFO extends Thread {
                         System.out.println("***** Not proper messages sent");
                         System.out.printf("Message: %s\n", received);
                     }
-
-                    // messages.printMap(messages.getMessages());
                 }
             }
         }
     }
 
-
-    // Return output
-    public String close() {
-        running = false;
-        udp.socket.close();
-        return output.getOutput();
-    }
-
+    /**
+     * Deliver message
+     * @param src
+     * @param m
+     */
     private void deliver(Host src, Message m) {
-        // System.out.println("\n***** Inside deliver");
-        // messages.printMap(messages.getMessagesClone());
-        
         if (messages.canDeliverMessage(m)) {
             ArrayList<Message> deliverList = messages.getDeliverMessages(m);
             Collections.sort(deliverList);
@@ -152,5 +129,12 @@ public class FIFO extends Thread {
                 output.writeDeliver(message);
             }
         }
+    }
+
+    // Close socket, Return output
+    public String close() {
+        running = false;
+        udp.socket.close();
+        return output.getOutput();
     }
 }

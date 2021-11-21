@@ -1,14 +1,14 @@
-My PID: 26569
+My PID: 26571
 
-From a new terminal type `kill -SIGINT 26569` or `kill -SIGTERM 26569` to stop processing packets
+From a new terminal type `kill -SIGINT 26571` or `kill -SIGTERM 26571` to stop processing packets
 
-My ID: 3
+My ID: 5
 
 List of resolved hosts is:
 ==========================
 Path to output:
 ===============
-/Users/michaelgysel/My Drive/Classes/CURRENT - S1 2021/CS-451 - Distributed Algorithms/Project/CS-451-Project-1/example/output/proc03.output
+/Users/michaelgysel/My Drive/Classes/CURRENT - S1 2021/CS-451 - Distributed Algorithms/Project/CS-451-Project-1/example/output/proc05.output
 
 1
 Human-readable IP: 127.0.0.1

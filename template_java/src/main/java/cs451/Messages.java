@@ -37,7 +37,7 @@ public class Messages {
         Messages.ack = new ConcurrentHashMap<Host, ArrayList<Message>>();
         this.canDeliver = new ConcurrentHashMap<Host, ArrayList<Message>>();
 
-        // Initialize delivered for each host
+        // Initialize hashmaps for each host
         for (Host host: hosts.getHosts()) {
             Messages.delivered.put(host, new ArrayList<Message>());
             Messages.sent.put(host, new ArrayList<Message>());
@@ -46,9 +46,9 @@ public class Messages {
             this.canDeliver.put(host, new ArrayList<Message>());
         }
 
+        // Initialize messages for each host
         for (Config config: configs) {
             Host receiver = hosts.getHostById(config.getId());
-
             // Add messages to messages map
             int i = 1;
             while (i <= config.getM()) {
@@ -68,29 +68,25 @@ public class Messages {
      * @return boolean
      */
     public boolean addMessage(Host from, Message m) {        
-        // System.out.println("***** Inside addMessage");
-        // System.out.printf("Host: %s\n", from.getId());
-        // System.out.printf("Message: %s\n", m.toString());
-
         ArrayList<Message> msgList = getMessageList(from);
 
         // If messages in delivered, make sure not a duplicate
         if (doesListContainMessage(msgList, m)) {
-            // System.out.println("* MsgList contains m");
-            // System.out.printf("Message: %s\n", message.toString());
-            // System.out.printf("M: %s\n", m.toString());
             return false;
         }
 
         writeLock.lock();
         msgList.add(m);
         writeLock.unlock();
-        // System.out.println("* MsgList does not contain m");
-        // printMap(messages);
 
         return true;
     }
 
+    /**
+     * Gets list of messages for host
+     * @param host
+     * @return msgList
+     */
     public ArrayList<Message> getMessageList(Host host) {
         readLock.lock();
         ArrayList<Message> msgList = messages.get(host);
@@ -99,6 +95,12 @@ public class Messages {
         return msgList;
     }
 
+    /**
+     * Checks if list contains message
+     * @param msgList
+     * @param m
+     * @return boolean
+     */
     public boolean doesListContainMessage(List<Message> msgList, Message m) {
         readLock.lock();
         for (Message message: msgList) {
@@ -116,12 +118,8 @@ public class Messages {
      * @param m
      */
     public void addMessages(Host from, Message m) {
-        // System.out.println("***** Inside adMessages");
-        // System.out.printf("Host: %s\n", from.getId());
-        // System.out.printf("Message: %s\n", m.toString());
         // Put message in messages for each host (these are never from me)
         for (Host host: hosts.getHosts()) {
-            // System.out.printf("Host: %s\n", host.getId());
             Message copy = m.getCopy();
             if (host.equals(me) || host.equals(from) || host.equals(m.getHost())) {
                 // If host is me or from, update ack, as I do not need to send to myself
@@ -131,6 +129,12 @@ public class Messages {
         }
     }
 
+    /**
+     * Gets original message object
+     * @param host
+     * @param m
+     * @return msg
+     */
     public Message getOGMessage(Host host, Message m) {
         Message equalM = null;
         
@@ -146,6 +150,11 @@ public class Messages {
         return equalM;
     }
 
+    /**
+     * Gets original messages
+     * @param m
+     * @return list of original messages
+     */
     public ArrayList<Message> getOGMessages(Message m) {
         ArrayList<Message> OGMessages = new ArrayList<Message>();
         
@@ -156,8 +165,13 @@ public class Messages {
         return OGMessages;
     }
 
+    /**
+     * Updates ack from host for message
+     * @param from
+     * @param message
+     * @return
+     */
     public boolean updateAck(Host from, Message message) {
-        // System.out.println("***** Inside updateAck");
         Message m = getOGMessage(from, message);
         if (m != null) {
             writeLock.lock();
@@ -169,6 +183,11 @@ public class Messages {
         return false;
     }
 
+    /**
+     * Updates message.isDelivered in messages
+     * @param message
+     * @return boolean
+     */
     public boolean updateDelivered(Message message) {
         // System.out.println("***** Inside updateDelivered");
         ArrayList<Message> messages = getOGMessages(message);
@@ -194,6 +213,12 @@ public class Messages {
         return true;
     }
 
+    /**
+     * Checks if message can be delivered
+     * Message can be delivered if majority acks and not yet delivered
+     * @param message
+     * @return boolean
+     */
     public boolean canDeliverMessage(Message message) {   
         // Get equal messages
         ArrayList<Message> messages = getOGMessages(message);
@@ -218,9 +243,6 @@ public class Messages {
         // If majority acks, update acks for all, add to canDeliver
         majority = numAcks / total;
         if (majority > 0.5 && delivered == false) {
-            // System.out.printf("Majority found for: %s\n", message.toString());
-            // Update ACKs
-
             // Add message to canDeliver
             Message first = messages.get(0);
             if (first != null) {
@@ -233,6 +255,11 @@ public class Messages {
         return false;
     }
 
+    /**
+     * Adds message to canDeliver
+     * Does not add if duplicate
+     * @param m
+     */
     public void addToCanDeliver(Message m) {
         readLock.lock();
         ArrayList<Message> msgList = canDeliver.get(m.getHost());
@@ -246,6 +273,11 @@ public class Messages {
         }
     }
 
+    /**
+     * Gets messages to deliver from canDeliver
+     * @param m
+     * @return
+     */
     public ArrayList<Message> getDeliverMessages(Message m) {
         ArrayList<Message> deliverList = new ArrayList<Message>();
         
@@ -262,17 +294,10 @@ public class Messages {
             int sequenceNumber = thisMsg.getSequenceNumber();
             boolean isDelivered = thisMsg.getIsDelivered();
             readLock.unlock();
-
-
-            // System.out.printf("I: %d\n", i);
-            // System.out.printf("thisMsg: %s\n", thisMsg.toString());
             if (sequenceNumber != i) {
                 break;
             }
             if (!isDelivered) {
-                // System.out.printf("Can deliver message: %s\n", m.toString());
-                // System.out.printf("Hpst: %s\n", src);
-                // System.out.printf("M: %s\n", thisMsg.toString());
                 updateDelivered(thisMsg);
                 deliverList.add(thisMsg.getCopy());
             }
@@ -282,6 +307,10 @@ public class Messages {
         return deliverList;
     }
 
+    /**
+     * Prints a map - useful for debugging
+     * @param map
+     */
     public void printMap(HashMap<Host, ArrayList<Message>> map) {
         lock.lock();
         System.out.println("***** Print Map");

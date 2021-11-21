@@ -11,7 +11,6 @@ public class PerfectLinks extends Thread {
     public List<Config> configs;
     public Hosts hosts;
     private String output;
-    private MyEventListener listener;
     private Messages messages;
     private UDP udp;
 
@@ -78,12 +77,13 @@ public class PerfectLinks extends Thread {
         }
     }
 
-    // NOTE: start is used to run a thread asynchronously
+    /**
+     * Listen to and process packets
+     */
     public void run() {
-        System.out.println("INSIDE RUN");
+        // System.out.println("INSIDE RUN");
 
         running = true;
-
         while (running) {
 
             // Receive Packet
@@ -93,11 +93,6 @@ public class PerfectLinks extends Thread {
                 Host from = hosts.getHostByAddress(packet.getAddress(), packet.getPort());
                 String received = new String(packet.getData(), packet.getOffset(), packet.getLength()).trim();
                 Message message = new Message(received, hosts);
-                // System.out.println("***** Inside Receive");
-                // System.out.printf("RECEIVED MESSAGE: %s\n", received);
-                // System.out.printf("FORMATTED MESSAGE: %s\n", message.toString());
-                // System.out.printf("TYPE: %s\n", message.getType());
-                // System.out.printf("CONTENT: %s\n", message.getContent());
                 if (message.getType() == MessageType.BROADCAST) {
                     deliver(from, message);
                     // Send ack back, even if already delivered
@@ -115,15 +110,9 @@ public class PerfectLinks extends Thread {
         }
     }
 
-    public String close() {
-        running = false;
-        udp.socket.close();
-        return output;
-    }
-
-    public void setMyEventListener (MyEventListener listener) {
-        this.listener = listener;
-    }
+    // public void setMyEventListener (MyEventListener listener) {
+    //     this.listener = listener;
+    // }
 
     private void deliver(Host src, Message m) {
         // if (messages.putMessageInMap(messages.getDelivered(), src, m)) {
@@ -147,6 +136,16 @@ public class PerfectLinks extends Thread {
             output = String.format("%sb %s\n", output, m.getContent());
             outputLock.writeLock().unlock();
         }
+    }
+
+    /**
+     * Close udp socket
+     * @return output
+     */
+    public String close() {
+        running = false;
+        udp.socket.close();
+        return output;
     }
 
     public List<Config> getConfigs() {

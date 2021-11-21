@@ -91,8 +91,7 @@ public class Message implements Comparable<Message> {
             return true;
         }
 
-        /* Check if o is an instance of Message or not
-        "null instanceof [type]" also returns false */
+        // Check if instance of Message
         if (!(o instanceof Message)) {
             return false;
         }

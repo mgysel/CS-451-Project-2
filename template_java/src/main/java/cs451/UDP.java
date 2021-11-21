@@ -3,14 +3,11 @@ package cs451;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
 public class UDP {
-    private boolean running;
-
     public DatagramSocket socket;
 
     public UDP(Host me) {
@@ -29,7 +26,7 @@ public class UDP {
         byte[] buf = new byte[256];
         buf = m.getBytes();
 
-        // Create packet
+        // Create packet, send
         try {
             DatagramPacket packet = new DatagramPacket(buf, buf.length, dest);
             socket.send(packet);
@@ -47,14 +44,12 @@ public class UDP {
     }
 
     public DatagramPacket receive() {
-        // System.out.println("Inside UDP Receive");
         byte[] buf = new byte[256];
 
         // Receive Packet
         DatagramPacket packet = new DatagramPacket(buf, buf.length);
         try {
             socket.receive(packet);
-
             return packet;
         } catch (SocketTimeoutException e) {
             // Do nothing

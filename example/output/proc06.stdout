@@ -1,14 +1,14 @@
-My PID: 26569
+My PID: 25953
 
-From a new terminal type `kill -SIGINT 26569` or `kill -SIGTERM 26569` to stop processing packets
+From a new terminal type `kill -SIGINT 25953` or `kill -SIGTERM 25953` to stop processing packets
 
-My ID: 3
+My ID: 6
 
 List of resolved hosts is:
 ==========================
 Path to output:
 ===============
-/Users/michaelgysel/My Drive/Classes/CURRENT - S1 2021/CS-451 - Distributed Algorithms/Project/CS-451-Project-1/example/output/proc03.output
+/Users/michaelgysel/My Drive/Classes/CURRENT - S1 2021/CS-451 - Distributed Algorithms/Project/CS-451-Project-1/example/output/proc06.output
 
 1
 Human-readable IP: 127.0.0.1
@@ -30,9 +30,29 @@ Human-readable Port: 11004
 Human-readable IP: 127.0.0.1
 Human-readable Port: 11005
 
+6
+Human-readable IP: 127.0.0.1
+Human-readable Port: 11006
+
+7
+Human-readable IP: 127.0.0.1
+Human-readable Port: 11007
+
+8
+Human-readable IP: 127.0.0.1
+Human-readable Port: 11008
+
+9
+Human-readable IP: 127.0.0.1
+Human-readable Port: 11009
+
+10
+Human-readable IP: 127.0.0.1
+Human-readable Port: 11010
+
 
 Get Broadcast Configs
-20
+10
 Path to config:
 ===============
 ../example/output/config
@@ -40,19 +60,34 @@ Path to config:
 List of configs is:
 ==========================
 1
-M: 20
+M: 10
 
 2
-M: 20
+M: 10
 
 3
-M: 20
+M: 10
 
 4
-M: 20
+M: 10
 
 5
-M: 20
+M: 10
+
+6
+M: 10
+
+7
+M: 10
+
+8
+M: 10
+
+9
+M: 10
+
+10
+M: 10
 
 
 Doing some initialization
