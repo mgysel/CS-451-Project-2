@@ -11,9 +11,6 @@ import java.net.SocketTimeoutException;
 public class UDP {
     private boolean running;
 
-    private byte[] inBuf = new byte[256];
-    private byte[] outBuf = new byte[256];
-
     public DatagramSocket socket;
 
     public UDP(Host me) {
@@ -29,17 +26,20 @@ public class UDP {
 
     public boolean send(InetSocketAddress dest, String m) {
         // Create output buffer
-        outBuf = new byte[256];
-        outBuf = m.getBytes();
+        byte[] buf = new byte[256];
+        buf = m.getBytes();
 
         // Create packet
         try {
-            DatagramPacket packet = new DatagramPacket(outBuf, 0, outBuf.length, dest);
+            DatagramPacket packet = new DatagramPacket(buf, buf.length, dest);
             socket.send(packet);
         } catch(IOException e) {
             System.out.println("Client.Send IOException Error: " + e);
             return false;
         } catch (IllegalArgumentException e) {
+            System.out.printf("OutBuf: %s\n", buf.toString());
+            System.out.printf("Length: %s\n", buf.length);
+            System.out.printf("Message: %s\n", m);
             System.out.println("Client.Send IllegalArgumentException Error: " + e);
             return false;
         }
@@ -48,13 +48,12 @@ public class UDP {
 
     public DatagramPacket receive() {
         // System.out.println("Inside UDP Receive");
+        byte[] buf = new byte[256];
 
         // Receive Packet
-        DatagramPacket packet = new DatagramPacket(inBuf, inBuf.length);
+        DatagramPacket packet = new DatagramPacket(buf, buf.length);
         try {
             socket.receive(packet);
-
-            inBuf = new byte[256];
 
             return packet;
             // InetAddress address = packet.getAddress();

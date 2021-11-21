@@ -40,8 +40,6 @@ public class FIFO extends Thread {
         // Send messages until we receive all acks
         boolean firstBroadcast = true;
         while (true) {
-            // System.out.println("New send iteration");
-
             ConcurrentHashMap<Host, ArrayList<Message>> messagesClone = messages.getMessagesClone();
 
             // For Host in config (including me)
@@ -87,9 +85,9 @@ public class FIFO extends Thread {
                 if (Message.isValidMessage(received)) {
                     Message message = new Message(received, hosts);
 
-                    System.out.println("***** Inside Receive");
-                    System.out.printf("Received: %s\n", received);
-                    System.out.printf("From: %d\n", from.getId());
+                    // System.out.println("***** Inside Receive");
+                    // System.out.printf("Received: %s\n", received);
+                    // System.out.printf("From: %d\n", from.getId());
                     // System.out.println(received == null);
                     // System.out.printf("RECEIVED MESSAGE: %s\n", received);
                     // System.out.printf("FORMATTED MESSAGE: %s\n", message.toString());

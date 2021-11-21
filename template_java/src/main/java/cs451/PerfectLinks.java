@@ -99,7 +99,7 @@ public class PerfectLinks extends Thread {
 
             if (packet != null) {
                 Host from = hosts.getHostByAddress(packet.getAddress(), packet.getPort());
-                String received = new String(packet.getData(), packet.getOffset(),  packet.getLength()).trim();
+                String received = new String(packet.getData(), packet.getOffset(), packet.getLength()).trim();
                 Message message = new Message(received, hosts);
                 // System.out.println("***** Inside Receive");
                 // System.out.printf("RECEIVED MESSAGE: %s\n", received);
