@@ -3,6 +3,7 @@ package cs451;
 import java.net.DatagramPacket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.HashMap;
 
@@ -46,7 +47,7 @@ public class UniformBroadcast extends Thread implements MyEventListener {
         // Send messages until we receive all acks
         boolean firstBroadcast = true;
         while (true) {
-            HashMap<Host, ArrayList<Message>> messagesClone = messages.getMessagesClone();
+            ConcurrentHashMap<Host, ArrayList<Message>> messagesClone = messages.getMessagesClone();
 
             // For Host in config (including me)
             for (Host host: hosts.getHosts()) {

@@ -37,10 +37,10 @@ public class UDP {
             DatagramPacket packet = new DatagramPacket(outBuf, 0, outBuf.length, dest);
             socket.send(packet);
         } catch(IOException e) {
-            System.err.println("Client.Send IOException Error: " + e);
+            System.out.println("Client.Send IOException Error: " + e);
             return false;
         } catch (IllegalArgumentException e) {
-            System.err.println("Client.Send IllegalArgumentException Error: " + e);
+            System.out.println("Client.Send IllegalArgumentException Error: " + e);
             return false;
         }
         return true;

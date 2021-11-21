@@ -12,7 +12,7 @@ public class Output {
     }
 
     public void writeDeliver(Message m) {
-        System.out.println("***** Inside writeDeliver");
+        // System.out.println("***** Inside writeDeliver");
         outputLock.writeLock().lock();
         output = String.format("%sd %s %s\n", output, m.getHost().getId(), m.getContent());
         outputLock.writeLock().unlock();
