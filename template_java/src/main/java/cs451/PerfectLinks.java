@@ -61,7 +61,7 @@ public class PerfectLinks extends Thread {
      * Do not send messages to self
      */
     public void sendAll() {
-        System.out.println("Inside SendAll");
+        // System.out.println("Inside SendAll");
         
         // Send messages until we receive all acks
         boolean firstBroadcast = true;

@@ -239,6 +239,7 @@ public class Messages {
      */
     public boolean canDeliverMessage(Message message) {   
         System.out.println("Inside receivedMajority");
+        System.out.printf("message: %s\n", message.toString());
 
         // System.out.println("***** Inside canDeliverMessage");     
         // HashMap<Host, ArrayList<Message>> messagesClone = getMessagesClone();
@@ -280,14 +281,23 @@ public class Messages {
 
             // If majority, update ACKs for all, add to canDeliver
             if (majority > 0.5) {
-                int i = 0;
+                // System.out.printf("Majority found for: %s\n", message.toString());
                 for (Message m: equalMessages) {
                     m.setReceivedAck(true);
-                    if (i == 0) {
-                        ArrayList<Message> deliverList = canDeliver.get(m.getHost());
-                        deliverList.add(m.getCopy());
+                }
+                // Add message to canDeliver, make sure not a duplicate
+                Message thisMsg = equalMessages.get(0);
+                if (thisMsg != null) {
+                    boolean isDuplicate = false;
+                    ArrayList<Message> deliverList = canDeliver.get(thisMsg.getHost());
+                    for (Message thisMsgs: canDeliver.get(thisMsg.getHost())) {
+                        if (thisMsg.equals(thisMsgs)) {
+                            isDuplicate = true;
+                        }
                     }
-                    i++;
+                    if (!isDuplicate) {
+                        deliverList.add(thisMsg.getCopy());
+                    }
                 }
             }
         }

@@ -151,10 +151,11 @@ public class FIFO extends Thread implements MyEventListener {
     }
 
     private void deliver(Host src, Message m) {
-        // System.out.println("\n***** Inside deliver");
+        System.out.println("\n***** Inside deliver");
         // messages.printMap(messages.getMessagesClone());
         
         if (messages.canDeliverMessage(m)) {
+            System.out.printf("Can deliver message: %s\n", m);
             // Deliver all messages in canDeliver
             ArrayList<Message> msgList = messages.getCanDeliver().get(m.getFrom());
             Collections.sort(msgList);
@@ -163,13 +164,15 @@ public class FIFO extends Thread implements MyEventListener {
             int total = msgList.size();
             while(i <= total) {
                 Message thisMsg = msgList.get(i-1);
+                System.out.printf("I: %d\n", i);
+                System.out.printf("thisMsg: %s\n", thisMsg.toString());
                 if (thisMsg.getSequenceNumber() != i) {
                     break;
                 }
                 if (!thisMsg.getIsDelivered()) {
                     // System.out.printf("Can deliver message: %s\n", m.toString());
                     // System.out.printf("Hpst: %s\n", src);
-                    // System.out.printf("M: %s\n", m.toString());
+                    // System.out.printf("M: %s\n", thisMsg.toString());
                     messages.updateDelivered(thisMsg);
                     output.writeDeliver(thisMsg);
                 }
