@@ -40,7 +40,15 @@ public class Messages {
         Messages.ack = new ConcurrentHashMap<Host, ArrayList<Message>>();
         this.canDeliver = new ConcurrentHashMap<Host, ArrayList<Message>>();
 
-        // Initialize messages with messages to send
+        // Initialize delivered for each host
+        for (Host host: hosts.getHosts()) {
+            Messages.delivered.put(host, new ArrayList<Message>());
+            Messages.sent.put(host, new ArrayList<Message>());
+            Messages.messages.put(host, new ArrayList<Message>());
+            Messages.ack.put(host, new ArrayList<Message>());
+            this.canDeliver.put(host, new ArrayList<Message>());
+        }
+
         for (Config config: configs) {
             Host receiver = hosts.getHostById(config.getId());
 
@@ -52,12 +60,6 @@ public class Messages {
                 addMessage(receiver, message);
                 i++;
             }
-        }
-
-        // Initialize delivered for each host
-        for (Host host: hosts.getHosts()) {
-            Messages.delivered.put(host, new ArrayList<Message>());
-            this.canDeliver.put(host, new ArrayList<Message>());
         }
     }
 
@@ -73,39 +75,43 @@ public class Messages {
         // System.out.printf("Host: %s\n", from.getId());
         // System.out.printf("Message: %s\n", m.toString());
 
+        ArrayList<Message> msgList = getMessageList(from);
 
-        ArrayList<Message> msgList = messages.get(from);
-
-        // System.out.println("* About to check msgList");
-        if(msgList == null) {
-            // System.out.println("* MsgList is null");
-            // If no messages in delivered, create list
-            msgList = new ArrayList<Message>();
-            msgList.add(m);
-
-            writeLock.lock();
-            messages.put(from, msgList);
-            writeLock.unlock();
-
-            return true;
-        } else {
-            // If messages in delivered, make sure not a duplicate
-            for (Message message: msgList) {
-                if (message.equals(m)) {
-                    // System.out.println("* MsgList contains m");
-                    // System.out.printf("Message: %s\n", message.toString());
-                    // System.out.printf("M: %s\n", m.toString());
-                    return false;
-                }
-            }
-            writeLock.lock();
-            msgList.add(m);
-            writeLock.unlock();
-            // System.out.println("* MsgList does not contain m");
-            // printMap(messages);
-
-            return true;
+        // If messages in delivered, make sure not a duplicate
+        if (doesListContainMessage(msgList, m)) {
+            // System.out.println("* MsgList contains m");
+            // System.out.printf("Message: %s\n", message.toString());
+            // System.out.printf("M: %s\n", m.toString());
+            return false;
         }
+
+        writeLock.lock();
+        msgList.add(m);
+        writeLock.unlock();
+        // System.out.println("* MsgList does not contain m");
+        // printMap(messages);
+
+        return true;
+    }
+
+    public ArrayList<Message> getMessageList(Host host) {
+        readLock.lock();
+        ArrayList<Message> msgList = messages.get(host);
+        readLock.unlock();
+
+        return msgList;
+    }
+
+    public boolean doesListContainMessage(List<Message> msgList, Message m) {
+        readLock.lock();
+        for (Message message: msgList) {
+            if (message.equals(m)) {
+                readLock.unlock();
+                return true;
+            }
+        }
+        readLock.unlock();
+        return false;
     }
 
     /**
@@ -128,333 +134,156 @@ public class Messages {
         }
     }
 
-    public boolean isMessageInMap(HashMap<Host, ArrayList<Message>> map, Host from, Message message) {
-        ArrayList<Message> msgList = map.get(from);
-
-        if(msgList == null) {
-            // If no messages, not in list
-            return false;
-        } else {
-            // If messages in delivered, make sure not a duplicate
-            if(msgList.contains(message)) {
-                // System.out.println("Message is in map");
-                return true;
-            } 
+    public Message getOGMessage(Host host, Message m) {
+        Message equalM = null;
+        
+        readLock.lock();
+        ArrayList<Message> msgList = messages.get(host);
+        
+        int index = msgList.indexOf(m);
+        if(index != -1) {
+            equalM = msgList.get(index);
         }
 
-        return false;
+        readLock.unlock();
+        return equalM;
     }
 
-    public boolean removeMessage(HashMap<Host, ArrayList<Message>> map, Host from, Message message) {
-        ArrayList<Message> msgList = map.get(from);
-        Message remove = null;
-
-        if (msgList == null) {
-            return false;
-        } else {
-            for (Message m: msgList) {
-                if (m.equals(message)) {
-                    remove = m;
-                    break;
-                }
-            }
+    public ArrayList<Message> getOGMessages(Message m) {
+        ArrayList<Message> OGMessages = new ArrayList<Message>();
+        
+        for (Host host: hosts.getHosts()) {
+            OGMessages.add(getOGMessage(host, m));
         }
-
-        if (remove != null) {
-            msgList.remove(remove);
-            return true;
-        } 
-        return false;
-    }
-
-    public boolean doesAckEqualMessages() {
-        // Loop through configs, get receiver address
-        for (Config config: configs) {
-            Host receiver = hosts.getHostById(config.getId());
-
-            ArrayList<Message> ackList = ack.get(receiver);
-            ArrayList<Message> messageList = messages.get(receiver);
-
-            if(ackList == null) {
-                // If no messages, not in list
-                // System.out.println("Ack does not equal messages");
-                return false;
-            } else {
-                for (Message message: messageList) {
-                    if (!ackList.contains(message)) {
-                        // System.out.println("Ack does not equal messages");
-                        return false;
-                    }
-                }
-            }
-        }
-
-        // System.out.println("Ack equals messages");
-        return true;  
+        
+        return OGMessages;
     }
 
     public boolean updateAck(Host from, Message message) {
         // System.out.println("***** Inside updateAck");
-        ArrayList<Message> msgList = messages.get(from);
-
-        if (msgList == null) {
-            return false;
-        } else {
-            for (Message m: msgList) {
-                if (m.equals(message)) {
-                    // System.out.println("Updating received ack");
-                    // System.out.println(message.toString());
-                    m.setReceivedAck(true);
-                    // System.out.printf("ReceivedAck: %s\n", m.getReceivedAck());
-                    break;
-                }
-            }
+        Message m = getOGMessage(from, message);
+        if (m != null) {
+            writeLock.lock();
+            m.setReceivedAck(true);
+            writeLock.unlock();
+            return true;
         }
 
-        return true;
+        return false;
     }
 
     public boolean updateDelivered(Message message) {
         // System.out.println("***** Inside updateDelivered");
+        ArrayList<Message> messages = getOGMessages(message);
 
-        for (Host h: hosts.getHosts()) {
-            ArrayList<Message> msgList = messages.get(h);
-
-            if (msgList == null) {
-                break;
-            } else {
-                for (Message m: msgList) {
-                    if (m.equals(message)) {
-                        // System.out.println("Updating delivered");
-                        // System.out.printf("Message: %s\n", message.toString());
-                        // System.out.printf("M: %s\n", m.toString());
-                        m.setIsDelivered(true);
-                        // System.out.printf("Delivered: %s\n", m.getIsDelivered());
-                        // printMap(delivered);
-                    }
-                }
-            }
+        for (Message m: messages) {
+            writeLock.lock();
+            m.setIsDelivered(true);
+            writeLock.unlock();
         }
 
+        readLock.lock();
         ArrayList<Message> deliverList = canDeliver.get(message.getHost());
+        readLock.unlock();
+        
         for (Message m: deliverList) {
             if (m.equals(message)) {
+                writeLock.lock();
                 m.setIsDelivered(true);
+                writeLock.unlock();
             }
         }
 
         return true;
     }
 
-
-
-
-
-
-
-    /**
-     * Checks if received Ack for message from majority of hosts
-     * @param message
-     * @return
-     */
     public boolean canDeliverMessage(Message message) {   
-        // System.out.println("Inside receivedMajority");
-        // System.out.printf("message: %s\n", message.toString());
+        // Get equal messages
+        ArrayList<Message> messages = getOGMessages(message);
 
-        // System.out.println("***** Inside canDeliverMessage");     
-        // HashMap<Host, ArrayList<Message>> messagesClone = getMessagesClone();
+        boolean delivered = false;
+
         double numAcks = 0.0;
         double total = (double) hosts.getHosts().size();
         double majority = 0.0;
 
-        // If each host does not have
-        boolean isDelivered = false;
-        ArrayList<Message> equalMessages = new ArrayList<Message>();
-
-
-
-
-
-
-        // HashMap<Host, ArrayList<Message>> messagesClone = new HashMap<Host, ArrayList<Message>>();
-
-        // lock.lock();
-        // Set<Map.Entry<Host, ArrayList<Message>>> entrySet = messages.entrySet();
-
-        // // Collection Iterator
-        // Iterator<Entry<Host, ArrayList<Message>>> iterator = entrySet.iterator();
-
-        // while(iterator.hasNext()) {
-        //     Entry<Host, ArrayList<Message>> entry = iterator.next();
-        //     Host key = entry.getKey();
-
-        //     ArrayList<Message> messagesCopy = new ArrayList<Message>();
-        //     for (Message msgOG: entry.getValue()) {
-        //         Message msgCopy = msgOG.getCopy();
-        //         messagesCopy.add(msgCopy);
-        //     }
-        //     messagesClone.put(key, messagesCopy);
-        // }
-        // lock.unlock();
-
-
-
-
-
-
-        Set<Map.Entry<Host, ArrayList<Message>>> entrySet = messages.entrySet();
-
-        // Collection Iterator
-        Iterator<Entry<Host, ArrayList<Message>>> iterator = entrySet.iterator();
-
-        while(iterator.hasNext()) {
-            Entry<Host, ArrayList<Message>> entry = iterator.next();
-            Host key = entry.getKey();
-            ArrayList<Message> hostMessages = entry.getValue();
-
-            for (Message m: hostMessages) {
-                // System.out.printf("CDM: Message Comparison\n");
-                // System.out.printf("M: %s\n", m.toString());
-                // System.out.printf("Message: %s\n", message.toString());
-                if (m.equals(message)) {
-                    // System.out.printf("%s equals %s\n", m.toString(), message.toString());
-                    // System.out.printf("Ack: %s\n", m.getReceivedAck());
-                    // System.out.printf("Delivered: %s\n", m.getIsDelivered());
-                    equalMessages.add(message);
-                    if (m.getReceivedAck()) {
-                        // System.out.println("Received ack and not delivered");
-                        numAcks += 1.0;
-                    }
-                    if (m.getIsDelivered()) {
-                        isDelivered = true;
-                    }
-                } else {
-                    // System.out.printf("%s does not equal %s\n", m.toString(), message.toString());
-                }
+        readLock.lock();
+        for (Message m: messages) {
+            if (m.getIsDelivered()) {
+                delivered = true;
             }
-            majority = numAcks / total;
-
-            // If majority, update ACKs for all, add to canDeliver
-            if (majority > 0.5) {
-                // System.out.printf("Majority found for: %s\n", message.toString());
-                for (Message m: equalMessages) {
-                    m.setReceivedAck(true);
-                }
-                // Add message to canDeliver, make sure not a duplicate
-                Message thisMsg = equalMessages.get(0);
-                if (thisMsg != null) {
-                    boolean isDuplicate = false;
-                    ArrayList<Message> deliverList = canDeliver.get(thisMsg.getHost());
-                    for (Message thisMsgs: canDeliver.get(thisMsg.getHost())) {
-                        if (thisMsg.equals(thisMsgs)) {
-                            isDuplicate = true;
-                        }
-                    }
-                    if (!isDuplicate) {
-                        deliverList.add(thisMsg.getCopy());
-                    }
-                }
+            if (m.getReceivedAck()) {
+                numAcks += 1.0;
             }
         }
+        readLock.unlock();
 
-        if (!isDelivered && (majority > 0.5)) {
-            ArrayList<Message> msgList = messages.get(message.getHost());
-            msgList.add(message);
+        // If majority acks, update acks for all, add to canDeliver
+        majority = numAcks / total;
+        if (majority > 0.5 && delivered == false) {
+            // System.out.printf("Majority found for: %s\n", message.toString());
+            // Update ACKs
+
+            // Add message to canDeliver
+            Message first = messages.get(0);
+            if (first != null) {
+                addToCanDeliver(messages.get(0));
+            }
+
             return true;
         }
 
-        // System.out.printf("Can deliver: %s\n", message.toString());
-        // printMap(messages);
         return false;
     }
 
+    public void addToCanDeliver(Message m) {
+        readLock.lock();
+        ArrayList<Message> msgList = canDeliver.get(m.getHost());
+        int indexOf = msgList.indexOf(m);
+        readLock.unlock();
+
+        if(indexOf == -1) {
+            writeLock.lock();
+            msgList.add(m);
+            writeLock.unlock();
+        }
+    }
+
+    public ArrayList<Message> getDeliverMessages(Message m) {
+        ArrayList<Message> deliverList = new ArrayList<Message>();
+        
+        readLock.lock();
+        ArrayList<Message> msgList = canDeliver.get(m.getFrom());
+        Collections.sort(msgList);
+        readLock.unlock();
+
+        int i = 1;
+        int total = msgList.size();
+        while(i <= total) {
+            readLock.lock();
+            Message thisMsg = msgList.get(i-1);
+            int sequenceNumber = thisMsg.getSequenceNumber();
+            boolean isDelivered = thisMsg.getIsDelivered();
+            readLock.unlock();
 
 
+            // System.out.printf("I: %d\n", i);
+            // System.out.printf("thisMsg: %s\n", thisMsg.toString());
+            if (sequenceNumber != i) {
+                break;
+            }
+            if (!isDelivered) {
+                // System.out.printf("Can deliver message: %s\n", m.toString());
+                // System.out.printf("Hpst: %s\n", src);
+                // System.out.printf("M: %s\n", thisMsg.toString());
+                updateDelivered(thisMsg);
+                deliverList.add(thisMsg.getCopy());
+            }
+            i++;
+        }
 
-
-
-    // /**
-    //  * Checks if received Ack for message from majority of hosts
-    //  * @param message
-    //  * @return
-    //  */
-    // public boolean canDeliverMessage(Message message) {   
-    //     // System.out.println("Inside receivedMajority");
-    //     // System.out.printf("message: %s\n", message.toString());
-
-    //     // System.out.println("***** Inside canDeliverMessage");     
-    //     // HashMap<Host, ArrayList<Message>> messagesClone = getMessagesClone();
-    //     double numAcks = 0.0;
-    //     double total = (double) hosts.getHosts().size();
-    //     double majority = 0.0;
-
-    //     // If each host does not have
-    //     boolean isDelivered = false;
-    //     ArrayList<Message> equalMessages = new ArrayList<Message>();
-
-    //     for (Map.Entry<Host, ArrayList<Message>> entry : messages.entrySet()) {
-            
-    //         // Check that each host has this message
-    //         // Message must have received an ack and not already be delivered
-    //         Host host = entry.getKey();
-    //         ArrayList<Message> hostMessages = entry.getValue();
-    //         // System.out.printf("* CDM: Host: %s\n", host.getId());
-
-    //         for (Message m: hostMessages) {
-    //             // System.out.printf("CDM: Message Comparison\n");
-    //             // System.out.printf("M: %s\n", m.toString());
-    //             // System.out.printf("Message: %s\n", message.toString());
-    //             if (m.equals(message)) {
-    //                 // System.out.printf("%s equals %s\n", m.toString(), message.toString());
-    //                 // System.out.printf("Ack: %s\n", m.getReceivedAck());
-    //                 // System.out.printf("Delivered: %s\n", m.getIsDelivered());
-    //                 equalMessages.add(message);
-    //                 if (m.getReceivedAck()) {
-    //                     // System.out.println("Received ack and not delivered");
-    //                     numAcks += 1.0;
-    //                 }
-    //                 if (m.getIsDelivered()) {
-    //                     isDelivered = true;
-    //                 }
-    //             } else {
-    //                 // System.out.printf("%s does not equal %s\n", m.toString(), message.toString());
-    //             }
-    //         }
-    //         majority = numAcks / total;
-
-    //         // If majority, update ACKs for all, add to canDeliver
-    //         if (majority > 0.5) {
-    //             // System.out.printf("Majority found for: %s\n", message.toString());
-    //             for (Message m: equalMessages) {
-    //                 m.setReceivedAck(true);
-    //             }
-    //             // Add message to canDeliver, make sure not a duplicate
-    //             Message thisMsg = equalMessages.get(0);
-    //             if (thisMsg != null) {
-    //                 boolean isDuplicate = false;
-    //                 ArrayList<Message> deliverList = canDeliver.get(thisMsg.getHost());
-    //                 for (Message thisMsgs: canDeliver.get(thisMsg.getHost())) {
-    //                     if (thisMsg.equals(thisMsgs)) {
-    //                         isDuplicate = true;
-    //                     }
-    //                 }
-    //                 if (!isDuplicate) {
-    //                     deliverList.add(thisMsg.getCopy());
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     if (!isDelivered && (majority > 0.5)) {
-    //         ArrayList<Message> msgList = messages.get(message.getHost());
-    //         msgList.add(message);
-    //         return true;
-    //     }
-
-    //     // System.out.printf("Can deliver: %s\n", message.toString());
-    //     // printMap(messages);
-    //     return false;
-    // }
+        return deliverList;
+    }
 
     public List<Message> getPrevMessages(Message message) {
         // Get all messages with lower sequence numbers
@@ -507,52 +336,8 @@ public class Messages {
         return this.canDeliver;
     }
 
-    // public HashMap<Host, ArrayList<Message>> getMessagesClone() {
-    //     HashMap<Host, ArrayList<Message>> messagesClone = new HashMap<Host, ArrayList<Message>>();
-
-    //     messagesLock.readLock().lock();
-    //     for (HashMap.Entry<Host, ArrayList<Message>> entry : messages.entrySet()) {
-    //         Host key = entry.getKey();
-
-    //         ArrayList<Message> newValue = new ArrayList<Message>();
-    //         for (Message oldMsg: entry.getValue()) {
-    //             Message newMsg = oldMsg.getCopy();
-    //             newValue.add(newMsg);
-    //         }
-
-    //         messagesClone.put(key, newValue);
-    //     }
-    //     messagesLock.readLock().unlock();
-
-    //     return messagesClone;
-    // }
-
     public ConcurrentHashMap<Host, ArrayList<Message>> getMessagesClone() {
         ConcurrentHashMap<Host, ArrayList<Message>> messagesClone = new ConcurrentHashMap<Host, ArrayList<Message>>();
-
-        // readLock.lock();
-        // Set<Map.Entry<Host, ArrayList<Message>>> entrySet = messages.entrySet();
-
-        // // Collection Iterator
-        // Iterator<Entry<Host, ArrayList<Message>>> iterator = entrySet.iterator();
-
-        // while(iterator.hasNext()) {
-        //     Entry<Host, ArrayList<Message>> entry = iterator.next();
-        //     Host key = entry.getKey();
-
-        //     ArrayList<Message> messagesCopy = new ArrayList<Message>();
-        //     for (Message msgOG: entry.getValue()) {
-        //         Message msgCopy = msgOG.getCopy();
-        //         messagesCopy.add(msgCopy);
-        //     }
-        //     messagesClone.put(key, messagesCopy);
-        // }
-        // readLock.unlock();
-
-        // Entry<String, List<String>> entry = iterator.next();
-
-
-
 
         readLock.lock();
         for (HashMap.Entry<Host, ArrayList<Message>> entry : messages.entrySet()) {
@@ -563,7 +348,6 @@ public class Messages {
                 Message newMsg = oldMsg.getCopy();
                 newValue.add(newMsg);
             }
-
             messagesClone.put(key, newValue);
         }
         readLock.unlock();

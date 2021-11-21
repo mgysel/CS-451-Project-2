@@ -6,8 +6,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.HashMap;
-import java.util.Iterator;
 
 public class FIFO extends Thread {
     private PerfectLinks pl;
@@ -32,13 +30,7 @@ public class FIFO extends Thread {
         this.output = new Output();
     }
 
-    // // Broadcast
-    // public void broadcast() {
-    //     // Send all messages
-    //     pl.sendAll();
-    // }
-
-        /**
+    /**
      * Send messages per configuration
      * Do not send messages to self
      */
@@ -48,6 +40,8 @@ public class FIFO extends Thread {
         // Send messages until we receive all acks
         boolean firstBroadcast = true;
         while (true) {
+            // System.out.println("New send iteration");
+
             ConcurrentHashMap<Host, ArrayList<Message>> messagesClone = messages.getMessagesClone();
 
             // For Host in config (including me)
@@ -62,26 +56,13 @@ public class FIFO extends Thread {
                     // System.out.printf("MstList: %s\n", msgList);
                     // System.out.printf("MsgList length: %d\n", msgList.size());
                     for (Message m: msgList) {
-                        System.out.println("***** Inside Iterator");
+                        // System.out.println("***** Inside Iterator");
                         if (m.getReceivedAck() == false) {
                             // System.out.println("\n***** Sending message\n");
                             pl.send(host, m);
                             output.writeBroadcast(m, firstBroadcast);
                         }
                     }
-
-
-                    // Iterator<Message> iterator = msgList.iterator(); while(iterator.hasNext()) { 
-                    //     System.out.println("***** Inside Iterator");
-                    //     System.out.printf("Iterator: %s\n", iterator.toString());
-                    //     System.out.printf("Next: %s\n", iterator.next().toString());
-                    //     Message m = iterator.next();
-                    //     if (iterator.next().getReceivedAck() == false) {
-                    //         // System.out.println("\n***** Sending message\n");
-                    //         pl.send(host, m);
-                    //         output.writeBroadcast(m, firstBroadcast);
-                    //     }
-                    // }
                 } 
                 firstBroadcast = false;
             }
@@ -106,10 +87,10 @@ public class FIFO extends Thread {
                 if (Message.isValidMessage(received)) {
                     Message message = new Message(received, hosts);
 
-                    // System.out.println("***** Inside Receive");
-                    // System.out.printf("Received: %s\n", received);
+                    System.out.println("***** Inside Receive");
+                    System.out.printf("Received: %s\n", received);
+                    System.out.printf("From: %d\n", from.getId());
                     // System.out.println(received == null);
-                    // System.out.printf("From: %d\n", from.getId());
                     // System.out.printf("RECEIVED MESSAGE: %s\n", received);
                     // System.out.printf("FORMATTED MESSAGE: %s\n", message.toString());
                     // System.out.printf("TYPE: %s\n", message.getType());
@@ -164,28 +145,11 @@ public class FIFO extends Thread {
         // messages.printMap(messages.getMessagesClone());
         
         if (messages.canDeliverMessage(m)) {
-            // System.out.printf("Can deliver message: %s\n", m);
-            // Deliver all messages in canDeliver
-            ArrayList<Message> msgList = messages.getCanDeliver().get(m.getFrom());
-            Collections.sort(msgList);
-            
-            int i = 1;
-            int total = msgList.size();
-            while(i <= total) {
-                Message thisMsg = msgList.get(i-1);
-                // System.out.printf("I: %d\n", i);
-                // System.out.printf("thisMsg: %s\n", thisMsg.toString());
-                if (thisMsg.getSequenceNumber() != i) {
-                    break;
-                }
-                if (!thisMsg.getIsDelivered()) {
-                    // System.out.printf("Can deliver message: %s\n", m.toString());
-                    // System.out.printf("Hpst: %s\n", src);
-                    // System.out.printf("M: %s\n", thisMsg.toString());
-                    messages.updateDelivered(thisMsg);
-                    output.writeDeliver(thisMsg);
-                }
-                i++;
+            ArrayList<Message> deliverList = messages.getDeliverMessages(m);
+            Collections.sort(deliverList);
+
+            for (Message message: deliverList) {
+                output.writeDeliver(message);
             }
         }
     }
