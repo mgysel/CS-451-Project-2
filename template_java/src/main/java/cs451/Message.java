@@ -10,37 +10,33 @@ public class Message implements Comparable<Message> {
     private MessageType type;
     private int sequenceNumber;
     private Host from;
+    private Host to;
     private String content;
     private boolean receivedAck;
     private boolean isDelivered;
 
-    public Message(MessageType type, int sequenceNumber, Host from, String content) {
+    public Message(MessageType type, int sequenceNumber, Host from, Host to, String content, boolean receivedAck, boolean isDelivered) {
         this.type = type;
         this.sequenceNumber = sequenceNumber;
         this.from = from;
-        this.content = content;
-        this.receivedAck = false;
-        this.isDelivered = false;
-    }
-
-    public Message(MessageType type, int sequenceNumber, Host from, String content, boolean receivedAck) {
-        this.sequenceNumber = sequenceNumber;
-        this.type = type;
-        this.from = from;
+        this.to = to;
         this.content = content;
         this.receivedAck = receivedAck;
+        this.isDelivered = isDelivered;
     }
 
-    public Message(String message, Hosts hosts) {
+    // public Message(MessageType type, int sequenceNumber, Host from, String content, boolean receivedAck) {
+    //     this.sequenceNumber = sequenceNumber;
+    //     this.type = type;
+    //     this.from = from;
+    //     this.content = content;
+    //     this.receivedAck = receivedAck;
+    // }
+
+    public Message(String message, Hosts hosts, Host me) {
         String[] messageComponents = message.split("/");
         if (messageComponents.length == 4) {
-            if (messageComponents[0].equals("A")) {
-                this.type = MessageType.ACK;
-            } else if (messageComponents[0].equals("B")) {
-                this.type = MessageType.BROADCAST;
-            } else if (messageComponents[0].equals("F")) {
-                this.type = MessageType.FORWARD;
-            }
+            // Sequence Number
             try {
                 int sequenceNumber = Integer.parseInt(messageComponents[1]);
                 this.sequenceNumber = sequenceNumber;
@@ -49,6 +45,15 @@ public class Message implements Comparable<Message> {
             } catch (NullPointerException e) {
                 System.out.printf("Cannot convert message because ID is a null pointer: ", e);
             }
+            // Type
+            if (messageComponents[0].equals("A")) {
+                this.type = MessageType.ACK;
+            } else if (messageComponents[0].equals("B")) {
+                this.type = MessageType.BROADCAST;
+            } else if (messageComponents[0].equals("F")) {
+                this.type = MessageType.FORWARD;
+            }
+            // From
             try {
                 Integer id = Integer.parseInt(messageComponents[2]);
                 this.from = hosts.getHostById(id);
@@ -57,21 +62,24 @@ public class Message implements Comparable<Message> {
             } catch (NullPointerException e) {
                 System.out.printf("Cannot convert message because ID is a null pointer: ", e);
             }
+            this.to = me;
             this.content = messageComponents[3];
             this.receivedAck = false;
+            this.isDelivered = false;
         }
     }
 
-    public Message getCopy() {
+    public Message getClone() {
         int sequenceNumber = this.getSequenceNumber();
         MessageType type = this.getType();
-        Host from = this.getHost();
+        Host from = this.getFrom();
+        Host to = this.getTo();
         String content = new String(this.getContent());
         boolean receivedAck = this.getReceivedAck();
+        boolean isDelivered = this.getIsDelivered();
 
-        Message newM = new Message(type, sequenceNumber, from, content, receivedAck);
-
-        return newM;
+        Message clone = new Message(type, sequenceNumber, from, to, content, receivedAck, isDelivered);
+        return clone;
 
     }
 
@@ -143,16 +151,16 @@ public class Message implements Comparable<Message> {
         return this.type;
     }
 
-    public Host getHost() {
+    public Host getFrom() {
         return this.from;
+    }
+
+    public Host getTo() {
+        return this.to;
     }
 
     public String getContent() {
         return this.content;
-    }
-
-    public Host getFrom() {
-        return this.from;
     }
 
     public boolean getReceivedAck() {

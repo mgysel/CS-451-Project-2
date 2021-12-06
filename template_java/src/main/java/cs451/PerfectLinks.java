@@ -14,18 +14,15 @@ public class PerfectLinks extends Thread {
     private Messages messages;
     private UDP udp;
 
-    private boolean running;
-
     private final ReentrantReadWriteLock outputLock = new ReentrantReadWriteLock();
 
-    public PerfectLinks(Host me, List<Config> configs, Hosts hosts) {
+    public PerfectLinks(Host me, List<Config> configs, Hosts hosts, Messages messages) {
         this.me = me;
         this.configs = configs;
         this.hosts = hosts;
         this.output = "";
-        this.running = false;
-        this.messages = new Messages(me, configs, hosts);
-        this.udp = new UDP(me);
+        this.messages = messages;
+        this.udp = new UDP(me, this);
     }
 
     public boolean send(Host dest, Message m) {
@@ -39,7 +36,6 @@ public class PerfectLinks extends Thread {
         //     System.out.printf("Sleep exception: %s\n", ex);
         // }
         
-
         if (udp.send(address, content)) {
             return true;
         }
@@ -47,73 +43,35 @@ public class PerfectLinks extends Thread {
         return false;
     }
 
-    /**
-     * Send messages per configuration
-     * Do not send messages to self
-     */
-    public void sendAll() {
-        // System.out.println("Inside SendAll");
-        
-        // Send messages until we receive all acks
-        boolean firstBroadcast = true;
-        while (true) {
-            // For Host in config that is not me
-            for (Config config: configs) {
-                Host peer = hosts.getHostById(config.getId());
-                if (peer.getId() != me.getId()) {
-                    // Send all messages
-                    List<Message> msgList = messages.getMessages().get(peer);
-                    if (msgList != null) {
-                        for (Message m: msgList) {
-                            if (m.getReceivedAck() == false) {
-                                send(peer, m);
-                                writeBroadcast(m, firstBroadcast);
-                            }
-                        }
-                    }
-                    firstBroadcast = false;
-                }
-            }
+    public void process(DatagramPacket packet) {
+        Host from = hosts.getHostByAddress(packet.getAddress(), packet.getPort());
+        String received = new String(packet.getData(), packet.getOffset(), packet.getLength()).trim();
+        Message message = new Message(received, hosts, me);
+        if (message.getType() == MessageType.BROADCAST) {
+            deliver(from, message);
+            // Send ack back, even if already delivered
+            Message ack = new Message(MessageType.ACK, message.getSequenceNumber(), me, from, message.getContent(), false, false);
+            send(from, ack);
+        } else if (message.getType() == MessageType.ACK) {
+            // Process ACK
+            Message m = new Message(MessageType.BROADCAST, message.getSequenceNumber(), me, from, message.getContent(), false, false);
+            messages.updateAck(from, m);
+        } else {
+            System.out.println("***** Not proper messages sent");
+            System.out.printf("Message: %s\n", received);
         }
     }
 
-    /**
-     * Listen to and process packets
-     */
-    public void run() {
-        // System.out.println("INSIDE RUN");
-
-        running = true;
-        while (running) {
-
-            // Receive Packet
-            DatagramPacket packet = udp.receive();
-
-            if (packet != null) {
-                Host from = hosts.getHostByAddress(packet.getAddress(), packet.getPort());
-                String received = new String(packet.getData(), packet.getOffset(), packet.getLength()).trim();
-                Message message = new Message(received, hosts);
-                if (message.getType() == MessageType.BROADCAST) {
-                    deliver(from, message);
-                    // Send ack back, even if already delivered
-                    Message ack = new Message(MessageType.ACK, message.getSequenceNumber(), me, message.getContent());
-                    send(from, ack);
-                } else if (message.getType() == MessageType.ACK) {
-                    // Process ACK
-                    Message m = new Message(MessageType.BROADCAST, message.getSequenceNumber(), me, message.getContent());
-                    messages.updateAck(from, m);
-                } else {
-                    System.out.println("***** Not proper messages sent");
-                    System.out.printf("Message: %s\n", received);
-                }
-            }
-        }
-    }
 
     // public void setMyEventListener (MyEventListener listener) {
     //     this.listener = listener;
     // }
 
+    /**
+     * If m is not delivered, deliver m
+     * @param src
+     * @param m
+     */
     private void deliver(Host src, Message m) {
         // if (messages.putMessageInMap(messages.getDelivered(), src, m)) {
         //     deliver(src, m);
@@ -121,29 +79,29 @@ public class PerfectLinks extends Thread {
         //     // listener.PerfectLinksDeliver(src, m);
         // } 
         deliver(src, m);
-        writeDeliver(src, m);
+        // writeDeliver(src, m);
     }
 
-    private void writeDeliver(Host p, Message m) {
-        outputLock.writeLock().lock();
-        output = String.format("%sd %s %s\n", output, p.getId(), m.getContent());
-        outputLock.writeLock().unlock();
-    }
+    // private void writeDeliver(Host p, Message m) {
+    //     outputLock.writeLock().lock();
+    //     output = String.format("%sd %s %s\n", output, p.getId(), m.getContent());
+    //     outputLock.writeLock().unlock();
+    // }
 
-    private void writeBroadcast(Message m, Boolean firstBroadcast) {
-        if (firstBroadcast) {
-            outputLock.writeLock().lock();
-            output = String.format("%sb %s\n", output, m.getContent());
-            outputLock.writeLock().unlock();
-        }
-    }
+    // private void writeBroadcast(Message m, Boolean firstBroadcast) {
+    //     if (firstBroadcast) {
+    //         outputLock.writeLock().lock();
+    //         output = String.format("%sb %s\n", output, m.getContent());
+    //         outputLock.writeLock().unlock();
+    //     }
+    // }
 
     /**
      * Close udp socket
      * @return output
      */
     public String close() {
-        running = false;
+        udp.setRunning(false);
         udp.socket.close();
         return output;
     }

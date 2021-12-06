@@ -7,10 +7,12 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
-public class UDP {
+public class UDP extends Thread {
     public DatagramSocket socket;
+    private PerfectLinks pl;
+    private boolean running;
 
-    public UDP(Host me) {
+    public UDP(Host me, PerfectLinks pl) {
         // Create socket
         InetSocketAddress address = new InetSocketAddress(me.getIp(), me.getPort());
         try {
@@ -19,8 +21,17 @@ public class UDP {
         } catch(SocketException e) {
             System.err.println("Cannot Create Socket: " + e);
         }
+        
+        this.pl = pl;
+        this.running = false;
     }
 
+    /**
+     * Send packet m to dest
+     * @param dest
+     * @param m
+     * @return
+     */
     public boolean send(InetSocketAddress dest, String m) {
         // Create output buffer
         byte[] buf = new byte[256];
@@ -43,6 +54,24 @@ public class UDP {
         return true;
     }
 
+    /**
+    * Listen to and process packets
+    */
+    public void run() {
+        // System.out.println("INSIDE RUN");
+
+        running = true;
+        while (running) {
+            // Receive Packet
+            DatagramPacket packet = receive();
+
+            // Send packet to PerfectLinks
+            if (packet != null) {
+                pl.process(packet);
+            }
+        }
+    }
+
     public DatagramPacket receive() {
         byte[] buf = new byte[256];
 
@@ -58,5 +87,9 @@ public class UDP {
             System.err.println("Server Cannot Receive Packet: " + e);
             return null;
         }
+    }
+
+    public void setRunning(boolean bool) {
+        this.running = bool;
     }
 }
