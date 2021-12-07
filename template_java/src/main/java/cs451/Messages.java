@@ -14,12 +14,7 @@ public class Messages {
     static Host me;
     static List<Config> configs;
     static Hosts hosts;
-
-    static ConcurrentHashMap<Host, ArrayList<Message>> delivered;
-    static ConcurrentHashMap<Host, ArrayList<Message>> sent;
-    static ConcurrentHashMap<Host, ArrayList<Message>> messages;
-    static ConcurrentHashMap<Host, ArrayList<Message>> ack;
-    private ConcurrentHashMap<Host, ArrayList<Message>> canDeliver;
+    static ConcurrentHashMap<String, ArrayList<Message>> messages;
 
     private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
     private final Lock readLock = rwLock.readLock();
@@ -30,35 +25,23 @@ public class Messages {
         Messages.configs = configs;
         Messages.hosts = hosts;
         Messages.me = me;
-
-        Messages.delivered = new ConcurrentHashMap<Host, ArrayList<Message>>();
-        Messages.sent = new ConcurrentHashMap<Host, ArrayList<Message>>();
-        Messages.messages = new ConcurrentHashMap<Host, ArrayList<Message>>();
-        Messages.ack = new ConcurrentHashMap<Host, ArrayList<Message>>();
-        this.canDeliver = new ConcurrentHashMap<Host, ArrayList<Message>>();
-
-        // Initialize hashmaps for each host
-        for (Host host: hosts.getHosts()) {
-            Messages.delivered.put(host, new ArrayList<Message>());
-            Messages.sent.put(host, new ArrayList<Message>());
-            Messages.messages.put(host, new ArrayList<Message>());
-            Messages.ack.put(host, new ArrayList<Message>());
-            this.canDeliver.put(host, new ArrayList<Message>());
-        }
+        Messages.messages = new ConcurrentHashMap<String, ArrayList<Message>>();
 
         // Initialize messages for each host
         for (Config config: configs) {
-            Host receiver = hosts.getHostById(config.getId());
+            Host to = hosts.getHostById(config.getId());
             // Add messages to messages map
             int i = 1;
             while (i <= config.getM()) {
                 // Put each message in map
-                Message message = new Message(MessageType.BROADCAST, i, me, Integer.toString(i));
-                addMessage(receiver, message);
+                Message message = new Message(MessageType.BROADCAST, i, me, to, Integer.toString(i));
+                MessageWrapper messageWrapper = new MessageWrapper(message, false, false)
+                addMessage(message);
                 i++;
             }
         }
     }
+
 
     /**
      * Checks if message in delivered
@@ -67,8 +50,10 @@ public class Messages {
      * @param message
      * @return boolean
      */
-    public boolean addMessage(Host from, Message m) {        
-        ArrayList<Message> msgList = getMessageList(from);
+    public boolean addMessage(Message m) {        
+        readLock.lock();
+        ArrayList<Message> msgList = messages.get(m.toString());
+        readLock.unlock();
 
         // If messages in delivered, make sure not a duplicate
         if (doesListContainMessage(msgList, m)) {
@@ -82,18 +67,18 @@ public class Messages {
         return true;
     }
 
-    /**
-     * Gets list of messages for host
-     * @param host
-     * @return msgList
-     */
-    public ArrayList<Message> getMessageList(Host host) {
-        readLock.lock();
-        ArrayList<Message> msgList = messages.get(host);
-        readLock.unlock();
+    // /**
+    //  * Gets list of messages for host
+    //  * @param host
+    //  * @return msgList
+    //  */
+    // public ArrayList<Message> getMessageList(Host host) {
+    //     readLock.lock();
+    //     ArrayList<Message> msgList = messages.get(host);
+    //     readLock.unlock();
 
-        return msgList;
-    }
+    //     return msgList;
+    // }
 
     /**
      * Checks if list contains message
@@ -120,12 +105,12 @@ public class Messages {
     public void addMessages(Host from, Message m) {
         // Put message in messages for each host (these are never from me)
         for (Host host: hosts.getHosts()) {
-            Message copy = m.getCopy();
-            if (host.equals(me) || host.equals(from) || host.equals(m.getHost())) {
+            Message clone = m.getClone();
+            if (host.equals(me) || host.equals(from) || host.equals(m.getFrom())) {
                 // If host is me or from, update ack, as I do not need to send to myself
-                copy.setReceivedAck(true);
+                clone.setReceivedAck(true);
             } 
-            addMessage(host, copy);
+            addMessage(clone);
         }
     }
 
@@ -135,35 +120,35 @@ public class Messages {
      * @param m
      * @return msg
      */
-    public Message getOGMessage(Host host, Message m) {
-        Message equalM = null;
+    public Message getOGMessage(Message m) {
+        Message OG = null;
         
         readLock.lock();
-        ArrayList<Message> msgList = messages.get(host);
+        ArrayList<Message> msgList = messages.get(m.toString());
         
         int index = msgList.indexOf(m);
         if(index != -1) {
-            equalM = msgList.get(index);
+            OG = msgList.get(index);
         }
 
         readLock.unlock();
-        return equalM;
+        return OG;
     }
 
-    /**
-     * Gets original messages
-     * @param m
-     * @return list of original messages
-     */
-    public ArrayList<Message> getOGMessages(Message m) {
-        ArrayList<Message> OGMessages = new ArrayList<Message>();
+    // /**
+    //  * Gets original messages
+    //  * @param m
+    //  * @return list of original messages
+    //  */
+    // public ArrayList<Message> getOGMessages(Message m) {
+    //     ArrayList<Message> OGMessages = new ArrayList<Message>();
         
-        for (Host host: hosts.getHosts()) {
-            OGMessages.add(getOGMessage(host, m));
-        }
+    //     for (Host host: hosts.getHosts()) {
+    //         OGMessages.add(getOGMessage(m));
+    //     }
         
-        return OGMessages;
-    }
+    //     return OGMessages;
+    // }
 
     /**
      * Updates ack from host for message
@@ -171,8 +156,8 @@ public class Messages {
      * @param message
      * @return
      */
-    public boolean updateAck(Host from, Message message) {
-        Message m = getOGMessage(from, message);
+    public boolean updateAck(Message message) {
+        Message m = getOGMessage(message);
         if (m != null) {
             writeLock.lock();
             m.setReceivedAck(true);

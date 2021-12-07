@@ -12,17 +12,13 @@ public class Message implements Comparable<Message> {
     private Host from;
     private Host to;
     private String content;
-    private boolean receivedAck;
-    private boolean isDelivered;
 
-    public Message(MessageType type, int sequenceNumber, Host from, Host to, String content, boolean receivedAck, boolean isDelivered) {
+    public Message(MessageType type, int sequenceNumber, Host from, Host to, String content) {
         this.type = type;
         this.sequenceNumber = sequenceNumber;
         this.from = from;
         this.to = to;
         this.content = content;
-        this.receivedAck = receivedAck;
-        this.isDelivered = isDelivered;
     }
 
     // public Message(MessageType type, int sequenceNumber, Host from, String content, boolean receivedAck) {
@@ -64,23 +60,7 @@ public class Message implements Comparable<Message> {
             }
             this.to = me;
             this.content = messageComponents[3];
-            this.receivedAck = false;
-            this.isDelivered = false;
         }
-    }
-
-    public Message getClone() {
-        int sequenceNumber = this.getSequenceNumber();
-        MessageType type = this.getType();
-        Host from = this.getFrom();
-        Host to = this.getTo();
-        String content = new String(this.getContent());
-        boolean receivedAck = this.getReceivedAck();
-        boolean isDelivered = this.getIsDelivered();
-
-        Message clone = new Message(type, sequenceNumber, from, to, content, receivedAck, isDelivered);
-        return clone;
-
     }
 
     public static boolean isValidMessage(String message) {
@@ -139,6 +119,17 @@ public class Message implements Comparable<Message> {
         return thisInt.compareTo(mInt);
     }
 
+    public Message getClone() {
+        int sequenceNumber = this.getSequenceNumber();
+        MessageType type = this.getType();
+        Host from = this.getFrom();
+        Host to = this.getTo();
+        String content = new String(this.getContent());
+
+        Message clone = new Message(type, sequenceNumber, from, to, content);
+        return clone;
+    }
+
     public int getSequenceNumber() {
         return this.sequenceNumber;
     }
@@ -161,21 +152,5 @@ public class Message implements Comparable<Message> {
 
     public String getContent() {
         return this.content;
-    }
-
-    public boolean getReceivedAck() {
-        return this.receivedAck;
-    }
-
-    public void setReceivedAck(boolean bool) {
-        this.receivedAck = bool;
-    }
-
-    public boolean getIsDelivered() {
-        return this.isDelivered;
-    }
-
-    public void setIsDelivered(boolean bool) {
-        this.isDelivered = bool;
     }
 }
