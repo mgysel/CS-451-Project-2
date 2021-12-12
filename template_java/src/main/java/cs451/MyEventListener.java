@@ -1,6 +1,7 @@
 package cs451;
 
 public interface MyEventListener {
-    void PerfectLinksDeliver(Host p, Message m);
+    void plDeliver(Host p, Message m);
+    void bebDeliver(Host p, Message m);
     // void ReceivedAck(String m);
 }

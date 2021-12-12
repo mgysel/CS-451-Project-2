@@ -10,6 +10,8 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
     static ConcurrentHashMap<Host, ArrayList<Message>> delivered;
     private static final ReentrantReadWriteLock outputLock = new ReentrantReadWriteLock();
 
+    private MyEventListener listener; 
+    
     private static String output;
     private int M;
     
@@ -68,22 +70,33 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
         return output;
     }
 
-    @Override
-    public void PerfectLinksDeliver(Host src, Message m) {
-        deliver(src, m);
-        // System.out.println("Caught the delivery");
-    }
-
     public static void writeDeliver(Host h, Message m) {
         outputLock.writeLock().lock();
-        output = String.format("%sd %s %s\n", output, h.getId(), m.getContent());
+        BestEffortBroadcast.output = String.format("%sd %s %s\n", BestEffortBroadcast.output, h.getId(), m.getContent());
         outputLock.writeLock().unlock();
     }
 
     public static void writeBroadcast(Message m) {
         outputLock.writeLock().lock();
-        output = String.format("%sb %s\n", output, m.getContent());
+        BestEffortBroadcast.output = String.format("%sb %s\n", BestEffortBroadcast.output, m.getContent());
         outputLock.writeLock().unlock();
+    }
+
+    public void setMyEventListener (MyEventListener listener) {
+        this.listener = listener;
+    }
+
+    @Override
+    public void plDeliver(Host src, Message m) {
+        deliver(src, m);
+        listener.bebDeliver(src, m);
+        // System.out.println("Caught the delivery");
+    }
+
+    @Override
+    public void bebDeliver(Host p, Message m) {
+        // TODO Auto-generated method stub
+        
     }
 
     // @Override
