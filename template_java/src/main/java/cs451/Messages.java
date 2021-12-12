@@ -39,7 +39,6 @@ public class Messages {
             writeLock.lock();
             msgList.add(m);
             writeLock.unlock();
-            readLock.unlock();
             return true;
         }
 

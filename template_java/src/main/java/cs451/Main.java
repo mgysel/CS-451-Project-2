@@ -17,16 +17,6 @@ public class Main {
         }
     }
 
-    private static void handleSignal(PerfectLinks pl, String filename) {
-        //immediately stop network packet processing
-        System.out.println("Immediately stopping network packet processing.");
-        String output = pl.close();
-
-        //write/flush output file if necessary
-        System.out.println("Writing output.");
-        writeOutput(output, filename);
-    }
-
     private static void handleSignal(BestEffortBroadcast beb, String filename) {
         //immediately stop network packet processing
         System.out.println("Immediately stopping network packet processing.");
@@ -35,15 +25,6 @@ public class Main {
         //write/flush output file if necessary
         System.out.println("Writing output.");
         writeOutput(output, filename);
-    }
-
-    private static void initSignalHandlers(PerfectLinks pl, String filename) {
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                handleSignal(pl, filename);
-            }
-        });
     }
 
     private static void initSignalHandlers(BestEffortBroadcast beb, String filename) {
@@ -154,7 +135,6 @@ public class Main {
 
         System.out.println("Doing some initialization\n");
         PerfectLinks pl = new PerfectLinks(me, configs, hosts);
-        pl.run();
         BestEffortBroadcast beb = new BestEffortBroadcast(pl, M);
         // initSignalHandlers(pl, parser.output());
         // UniformBroadcast ub = new UniformBroadcast(pl);

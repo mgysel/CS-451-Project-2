@@ -11,7 +11,6 @@ public class PerfectLinks extends Thread implements MyEventListener {
     private Host me;
     public List<Config> configs;
     public Hosts hosts;
-    private static String output;
     private UDP udp;
     static ConcurrentHashMap<Host, ArrayList<Message>> messages;
     static ConcurrentHashMap<Host, ArrayList<Message>> delivered;
@@ -21,8 +20,10 @@ public class PerfectLinks extends Thread implements MyEventListener {
         this.me = me;
         this.configs = configs;
         this.hosts = hosts;
-        PerfectLinks.output = "";
+        
         this.udp = new UDP(me, this);
+        this.udp.start();
+
         PerfectLinks.messages = new ConcurrentHashMap<Host, ArrayList<Message>>();
         PerfectLinks.delivered = new ConcurrentHashMap<Host, ArrayList<Message>>();
     }
@@ -34,15 +35,17 @@ public class PerfectLinks extends Thread implements MyEventListener {
      * @return
      */
     public boolean send(Host dest, Message m) {
+        // System.out.printf("Inside send: %s\n", m.toString());
+        
         InetSocketAddress address = dest.getAddress();
         String content = m.toString();
 
         // NOTE: For testing
-        // try {
-        //     TimeUnit.SECONDS.sleep(2);
-        // } catch (InterruptedException ex) {
-        //     System.out.printf("Sleep exception: %s\n", ex);
-        // }
+        try {
+            TimeUnit.SECONDS.sleep(2);
+        } catch (InterruptedException ex) {
+            System.out.printf("Sleep exception: %s\n", ex);
+        }
 
         // Send m
         if (udp.send(address, content)) {
@@ -63,6 +66,7 @@ public class PerfectLinks extends Thread implements MyEventListener {
      */
     private void deliver(Host src, Message m) {
         if (Messages.isMessageInMap(src, m, delivered) == null) {
+            // System.out.println("Inside Deliver");
             listener.PerfectLinksDeliver(src, m);
         }
     }
@@ -117,10 +121,9 @@ public class PerfectLinks extends Thread implements MyEventListener {
      * Close udp socket
      * @return output
      */
-    public String close() {
+    public void close() {
         udp.setRunning(false);
         udp.socket.close();
-        return output;
     }
 
     public List<Config> getConfigs() {

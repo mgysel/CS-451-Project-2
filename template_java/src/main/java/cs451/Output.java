@@ -3,7 +3,7 @@ package cs451;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class Output {
-    private static final ReentrantReadWriteLock outputLock = new ReentrantReadWriteLock();;
+    private static final ReentrantReadWriteLock outputLock = new ReentrantReadWriteLock();
 
     public static void writeDeliver(String output, Host h, Message m) {
         outputLock.writeLock().lock();

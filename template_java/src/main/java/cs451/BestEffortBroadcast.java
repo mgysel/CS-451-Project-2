@@ -3,11 +3,12 @@ package cs451;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class BestEffortBroadcast extends Thread implements MyEventListener {
     private PerfectLinks pl;
-    static ConcurrentHashMap<Host, ArrayList<Message>> messages;
     static ConcurrentHashMap<Host, ArrayList<Message>> delivered;
+    private static final ReentrantReadWriteLock outputLock = new ReentrantReadWriteLock();
 
     private static String output;
     private int M;
@@ -16,15 +17,21 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
         this.pl = pl;
         this.pl.setMyEventListener(this);
         this.M = M;
+
+        BestEffortBroadcast.output = "";
+
+        BestEffortBroadcast.delivered = new ConcurrentHashMap<Host, ArrayList<Message>>();
     }
 
     /**
      * Broadcast all messages
      */
     public void broadcastAll() {
+        System.out.println("Inside Broadcast All");
         int i = 1;
         while (i <= M) {
             Message m = new Message(MessageType.BROADCAST, i, pl.getMe(), Integer.toString(i));
+            System.out.printf("Message: %s\n", m.toString());
             broadcast(m);
             i += 1;
         }
@@ -32,16 +39,15 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
 
     // Broadcast
     public void broadcast(Message m) {
+        System.out.println("Inside Broadcast");
+
         // For all peers, pl.send(pi, m)
         List<Host> hosts = pl.getHosts().getHosts();
         for (Host dest: hosts) {
             pl.send(dest, m);
-            // Add message to messages
-            if (m.getType() == MessageType.BROADCAST) {
-                Messages.addMessageToMap(dest, m, messages);
-            }
         }
-        Output.writeBroadcast(output, m);
+        writeBroadcast(m);
+        System.out.printf("Output: %s\n", output);
     }
 
     /**
@@ -50,8 +56,10 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
      * @param m
      */
     private void deliver(Host src, Message m) {
-        if (Messages.isMessageInMap(src, m, delivered) == null) {
-            Output.writeDeliver(output, src, m);
+        if (Messages.addMessageToMap(src, m, delivered)) {
+            System.out.println("Writing deliver");
+            writeDeliver(src, m);
+            System.out.printf("Output: %s\n", BestEffortBroadcast.output);
         }
     }
 
@@ -63,7 +71,19 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
     @Override
     public void PerfectLinksDeliver(Host src, Message m) {
         deliver(src, m);
-        System.out.println("Caught the delivery");
+        // System.out.println("Caught the delivery");
+    }
+
+    public static void writeDeliver(Host h, Message m) {
+        outputLock.writeLock().lock();
+        output = String.format("%sd %s %s\n", output, h.getId(), m.getContent());
+        outputLock.writeLock().unlock();
+    }
+
+    public static void writeBroadcast(Message m) {
+        outputLock.writeLock().lock();
+        output = String.format("%sb %s\n", output, m.getContent());
+        outputLock.writeLock().unlock();
     }
 
     // @Override
