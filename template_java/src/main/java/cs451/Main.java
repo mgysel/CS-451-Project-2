@@ -27,20 +27,10 @@ public class Main {
         writeOutput(output, filename);
     }
 
-    private static void handleSignal(UniformBroadcast ub, String filename) {
+    private static void handleSignal(BestEffortBroadcast beb, String filename) {
         //immediately stop network packet processing
         System.out.println("Immediately stopping network packet processing.");
-        String output = ub.close();
-
-        //write/flush output file if necessary
-        System.out.println("Writing output.");
-        writeOutput(output, filename);
-    }
-
-    private static void handleSignal(FIFO fifo, String filename) {
-        //immediately stop network packet processing
-        System.out.println("Immediately stopping network packet processing.");
-        String output = fifo.close();
+        String output = beb.close();
 
         //write/flush output file if necessary
         System.out.println("Writing output.");
@@ -56,20 +46,11 @@ public class Main {
         });
     }
 
-    private static void initSignalHandlers(UniformBroadcast ub, String filename) {
+    private static void initSignalHandlers(BestEffortBroadcast beb, String filename) {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                handleSignal(ub, filename);
-            }
-        });
-    }
-
-    private static void initSignalHandlers(FIFO fifo, String filename) {
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                handleSignal(fifo, filename);
+                handleSignal(beb, filename);
             }
         });
     }
@@ -166,18 +147,18 @@ public class Main {
         // *************************************************************
         // UniformBroadcast Configuration
         // *************************************************************
+        int M = parser.bebConfigM();
         List<Config> configs = getBroadcastConfigs(parser, hosts);
         printConfigs(parser, configs);
 
 
         System.out.println("Doing some initialization\n");
-        Messages messages = new Messages(me, configs, hosts);
         PerfectLinks pl = new PerfectLinks(me, configs, hosts);
         pl.run();
+        BestEffortBroadcast beb = new BestEffortBroadcast(pl, M);
         // initSignalHandlers(pl, parser.output());
         // UniformBroadcast ub = new UniformBroadcast(pl);
-        FIFO fifo = new FIFO(pl);
-        initSignalHandlers(fifo, parser.output());
+        initSignalHandlers(beb, parser.output());
 
         System.out.println("Broadcasting and delivering messages...\n");
 
@@ -186,8 +167,10 @@ public class Main {
         // *********************************************************************
         // pl.start();
         // pl.sendAll();
-        fifo.start();
-        fifo.broadcast();
+        // fifo.start();
+        // fifo.broadcast();
+        pl.start();
+        beb.broadcastAll();
 
         // *********************************************************************
 

@@ -10,14 +10,12 @@ public class Message implements Comparable<Message> {
     private MessageType type;
     private int sequenceNumber;
     private Host from;
-    private Host to;
     private String content;
 
-    public Message(MessageType type, int sequenceNumber, Host from, Host to, String content) {
+    public Message(MessageType type, int sequenceNumber, Host from, String content) {
         this.type = type;
         this.sequenceNumber = sequenceNumber;
         this.from = from;
-        this.to = to;
         this.content = content;
     }
 
@@ -32,6 +30,14 @@ public class Message implements Comparable<Message> {
     public Message(String message, Hosts hosts, Host me) {
         String[] messageComponents = message.split("/");
         if (messageComponents.length == 4) {
+            // Type
+            if (messageComponents[0].equals("A")) {
+                this.type = MessageType.ACK;
+            } else if (messageComponents[0].equals("B")) {
+                this.type = MessageType.BROADCAST;
+            } else if (messageComponents[0].equals("F")) {
+                this.type = MessageType.FORWARD;
+            }
             // Sequence Number
             try {
                 int sequenceNumber = Integer.parseInt(messageComponents[1]);
@@ -40,14 +46,6 @@ public class Message implements Comparable<Message> {
                 System.out.printf("Cannot convert message because ID is not an integer: ", e);
             } catch (NullPointerException e) {
                 System.out.printf("Cannot convert message because ID is a null pointer: ", e);
-            }
-            // Type
-            if (messageComponents[0].equals("A")) {
-                this.type = MessageType.ACK;
-            } else if (messageComponents[0].equals("B")) {
-                this.type = MessageType.BROADCAST;
-            } else if (messageComponents[0].equals("F")) {
-                this.type = MessageType.FORWARD;
             }
             // From
             try {
@@ -58,7 +56,7 @@ public class Message implements Comparable<Message> {
             } catch (NullPointerException e) {
                 System.out.printf("Cannot convert message because ID is a null pointer: ", e);
             }
-            this.to = me;
+            // Content
             this.content = messageComponents[3];
         }
     }
@@ -123,10 +121,9 @@ public class Message implements Comparable<Message> {
         int sequenceNumber = this.getSequenceNumber();
         MessageType type = this.getType();
         Host from = this.getFrom();
-        Host to = this.getTo();
         String content = new String(this.getContent());
 
-        Message clone = new Message(type, sequenceNumber, from, to, content);
+        Message clone = new Message(type, sequenceNumber, from, content);
         return clone;
     }
 
@@ -144,10 +141,6 @@ public class Message implements Comparable<Message> {
 
     public Host getFrom() {
         return this.from;
-    }
-
-    public Host getTo() {
-        return this.to;
     }
 
     public String getContent() {
