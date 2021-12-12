@@ -172,7 +172,8 @@ public class Main {
 
         System.out.println("Doing some initialization\n");
         Messages messages = new Messages(me, configs, hosts);
-        PerfectLinks pl = new PerfectLinks(me, configs, hosts, messages);
+        PerfectLinks pl = new PerfectLinks(me, configs, hosts);
+        pl.run();
         // initSignalHandlers(pl, parser.output());
         // UniformBroadcast ub = new UniformBroadcast(pl);
         FIFO fifo = new FIFO(pl);

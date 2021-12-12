@@ -7,7 +7,7 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
     
     public BestEffortBroadcast(PerfectLinks pl) {
         this.pl = pl;
-        // this.pl.setMyEventListener(this);
+        this.pl.setMyEventListener(this);
     }
 
     // Broadcast
@@ -21,12 +21,12 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
 
     @Override
     public void PerfectLinksDeliver(Host p, Message m) {
-        // deliver(p, m);
-        // System.out.println("Caught the delivery");
+        deliver(p, m);
+        System.out.println("Caught the delivery");
     }
 
-    @Override
-    public void ReceivedAck(String m) {
+    // @Override
+    // public void ReceivedAck(String m) {
         
-    }
+    // }
 }
