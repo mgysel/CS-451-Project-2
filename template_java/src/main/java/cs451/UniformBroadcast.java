@@ -5,7 +5,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class UniformBroadcast extends Thread implements MyEventListener {
+public class UniformBroadcast implements MyEventListener {
     BestEffortBroadcast beb;
     BroadcastConfig bConfig;
     private static String output;
@@ -43,6 +43,31 @@ public class UniformBroadcast extends Thread implements MyEventListener {
             broadcast(m);
             i += 1;
         }
+
+        while (true) {
+            // System.out.println("Inside run - whileLoop");
+            // Loop through pending messages
+            ArrayList<Message> pendingClone = Messages.getListClone(pending);
+            // System.out.printf("Pending clone length: %d\n", pendingClone.size());
+
+            // // NOTE: For testing
+            // try {
+            //     TimeUnit.SECONDS.sleep(2);
+            // } catch (InterruptedException ex) {
+            //     System.out.printf("Sleep exception: %s\n", ex);
+            // }
+
+            for (Message m: pendingClone) {
+                // If majority hosts for m and m not delivered, deliver
+                // System.out.printf("Message m: %s\n", m);
+                // System.out.printf("Can Deliver?: %s\n", canDeliver(m));
+                // System.out.printf("Is Message Delivered?: %s\n", Messages.isMessageInList(m, delivered));
+                if (canDeliver(m) && !Messages.isMessageInList(m, delivered)) {
+                    deliver(m);
+                }
+            }
+        }
+
     }
 
     // Broadcast
@@ -62,7 +87,7 @@ public class UniformBroadcast extends Thread implements MyEventListener {
     }
 
     public void deliver(Message m) {
-        System.out.println("ub - deliver");
+        // System.out.println("ub - deliver");
 
         writeDeliver(m);
         Messages.addMessageToList(m, UniformBroadcast.delivered);
@@ -70,43 +95,43 @@ public class UniformBroadcast extends Thread implements MyEventListener {
 
     private boolean canDeliver(Message m) {
         if (Messages.isMajorityInMap(bConfig.getHosts().getHosts().size(), m, ack)) {
-            System.out.println("CAN DELIVER");
+            // System.out.println("CAN DELIVER");
             return true;
         }
 
         return false;
     }
 
-    /**
-    * Check if messages can be delivered, deliver
-    */
-    public void run() {
-        System.out.println("Inside ub run");
-        broadcastAll();
-        while (true) {
-            // System.out.println("Inside run - whileLoop");
-            // Loop through pending messages
-            ArrayList<Message> pendingClone = Messages.getListClone(UniformBroadcast.pending);
-            // System.out.printf("Pending clone length: %d\n", pendingClone.size());
+    // /**
+    // * Check if messages can be delivered, deliver
+    // */
+    // public void run() {
+    //     System.out.println("Inside ub run");
+    //     broadcastAll();
+    //     while (true) {
+    //         // System.out.println("Inside run - whileLoop");
+    //         // Loop through pending messages
+    //         ArrayList<Message> pendingClone = Messages.getListClone(UniformBroadcast.pending);
+    //         // System.out.printf("Pending clone length: %d\n", pendingClone.size());
 
-            // NOTE: For testing
-            // try {
-            //     TimeUnit.SECONDS.sleep(2);
-            // } catch (InterruptedException ex) {
-            //     System.out.printf("Sleep exception: %s\n", ex);
-            // }
+    //         // NOTE: For testing
+    //         try {
+    //             TimeUnit.SECONDS.sleep(2);
+    //         } catch (InterruptedException ex) {
+    //             System.out.printf("Sleep exception: %s\n", ex);
+    //         }
 
-            for (Message m: pendingClone) {
-                // If majority hosts for m and m not delivered, deliver
-                // System.out.printf("Message m: %s\n", m);
-                // System.out.printf("Can Deliver?: %s\n", canDeliver(m));
-                // System.out.printf("Is Message Delivered?: %s\n", Messages.isMessageInList(m, delivered));
-                if (canDeliver(m) && !Messages.isMessageInList(m, delivered)) {
-                    deliver(m);
-                }
-            }
-        }
-    }
+    //         for (Message m: pendingClone) {
+    //             // If majority hosts for m and m not delivered, deliver
+    //             System.out.printf("Message m: %s\n", m);
+    //             System.out.printf("Can Deliver?: %s\n", canDeliver(m));
+    //             System.out.printf("Is Message Delivered?: %s\n", Messages.isMessageInList(m, delivered));
+    //             if (canDeliver(m) && !Messages.isMessageInList(m, delivered)) {
+    //                 deliver(m);
+    //             }
+    //         }
+    //     }
+    // }
 
     /**
      * On beb deliver, add m to ack.

@@ -172,7 +172,7 @@ public class Main {
         // fifo.broadcast();
         pl.start();
         // beb.broadcastAll();
-        ub.start();
+        ub.broadcastAll();
 
         // *********************************************************************
 

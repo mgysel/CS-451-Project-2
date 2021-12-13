@@ -126,9 +126,11 @@ public class Messages {
         readLock.lock();
         for (Message message: list) {
             if (message.equals(m)) {
+                readLock.unlock();
                 return true;
             }
         }
+        readLock.unlock();
         return false;
     }
 
@@ -212,8 +214,8 @@ public class Messages {
                     double total = (double) numHosts;
                     double perAcks = numAcks / total;
 
-                    readLock.unlock();
                     if (perAcks > 0.5) {
+                        readLock.unlock();
                         return true;
                     } 
                 }
