@@ -47,6 +47,44 @@ public class Messages {
         return false;
     }
 
+    /**
+     * Adds host to message's host map
+     * @param h
+     * @param m
+     * @param map
+     * @return
+     */
+    public static boolean addHostToMap(Host h, Message m, ConcurrentHashMap<Message, ArrayList<Host>> map) {
+        readLock.lock();
+        ArrayList<Host> hostList = map.get(m);
+
+        // If h does not have any messages, create new message list
+        if (hostList == null) {
+            ArrayList<Host> newHostList = new ArrayList<Host>();
+            newHostList.add(h);
+            
+            readLock.unlock();
+            writeLock.lock();
+            map.put(m, newHostList);
+            writeLock.unlock();
+            return true;
+        }
+        
+        // If h has msgList, add m
+        int index = hostList.indexOf(h);
+        if(index == -1) {
+            readLock.unlock();
+            writeLock.lock();
+            hostList.add(h);
+            writeLock.unlock();
+            return true;
+        }
+
+        // If m already in h's msgList, return false
+        readLock.unlock();
+        return false;
+    }
+
     public static Message isMessageInMap(Host h, Message m, ConcurrentHashMap<Host, ArrayList<Message>> map) {
         Message msg = null;
 
@@ -63,6 +101,16 @@ public class Messages {
 
         readLock.unlock();
         return msg;
+    }
+
+    public static boolean isMessageInList(Message m, ArrayList<Message> list) {
+        readLock.lock();
+        int index = list.indexOf(m);
+        readLock.unlock();
+        if (index != -1) {
+            return true;
+        }
+        return false;
     }
 
     public static boolean removeMessageFromMap(Host h, Message m, ConcurrentHashMap<Host, ArrayList<Message>> map) {
@@ -105,5 +153,51 @@ public class Messages {
         readLock.unlock();
 
         return mapClone;
+    }
+
+    public static ArrayList<Message> getListClone(ArrayList<Message> list) {
+        ArrayList<Message> listClone = new ArrayList<Message>();
+        readLock.lock();
+        for (Message m: list) {
+            Message mClone = m.getClone();
+            listClone.add(mClone);
+        }
+        readLock.unlock();
+
+        return listClone;
+    }
+
+    public static boolean addMessageToList(Message m, ArrayList<Message> list) {
+        readLock.lock();
+        int index = list.indexOf(m);
+        if (index != -1) {
+            readLock.unlock();
+            writeLock.lock();
+            list.add(m);
+            writeLock.unlock();
+            return true;
+        } 
+
+        readLock.unlock();
+        return false;
+    }
+
+    public static boolean isMajorityInMap(int numHosts, Message m, ConcurrentHashMap<Message, ArrayList<Host>> map) {
+        readLock.lock();
+        ArrayList<Host> hostList = map.get(m);
+        if (hostList != null) {
+            double numAcks = (double) hostList.size();
+            double total = (double) numHosts;
+            double perAcks = numAcks / total;
+
+            if (perAcks > 0.5) {
+                readLock.unlock();
+                readLock.unlock();
+                return true;
+            }
+        }
+
+        readLock.unlock();
+        return false;
     }
 }

@@ -16,10 +16,10 @@ public class PerfectLinks extends Thread implements MyEventListener {
     static ConcurrentHashMap<Host, ArrayList<Message>> delivered;
     private MyEventListener listener; 
 
-    public PerfectLinks(Host me, List<Config> configs, Hosts hosts) {
-        this.me = me;
-        this.configs = configs;
-        this.hosts = hosts;
+    public PerfectLinks(BroadcastConfig bConfig) {
+        this.me = bConfig.getMe();
+        this.configs = bConfig.getConfigs();
+        this.hosts = bConfig.getHosts();
         
         this.udp = new UDP(me, this);
         this.udp.start();

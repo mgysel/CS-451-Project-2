@@ -11,14 +11,14 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
     private static final ReentrantReadWriteLock outputLock = new ReentrantReadWriteLock();
 
     private MyEventListener listener; 
-    
+
     private static String output;
     private int M;
     
-    public BestEffortBroadcast(PerfectLinks pl, int M) {
+    public BestEffortBroadcast(PerfectLinks pl, BroadcastConfig bConfig) {
         this.pl = pl;
         this.pl.setMyEventListener(this);
-        this.M = M;
+        this.M = bConfig.getM();
 
         BestEffortBroadcast.output = "";
 
@@ -65,11 +65,6 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
         }
     }
 
-    public String close() {
-        pl.close();
-        return output;
-    }
-
     public static void writeDeliver(Host h, Message m) {
         outputLock.writeLock().lock();
         BestEffortBroadcast.output = String.format("%sd %s %s\n", BestEffortBroadcast.output, h.getId(), m.getContent());
@@ -99,8 +94,8 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
         
     }
 
-    // @Override
-    // public void ReceivedAck(String m) {
-        
-    // }
+    public String close() {
+        pl.close();
+        return output;
+    }
 }

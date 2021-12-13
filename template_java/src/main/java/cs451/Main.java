@@ -27,11 +27,30 @@ public class Main {
         writeOutput(output, filename);
     }
 
+    private static void handleSignal(UniformBroadcast ub, String filename) {
+        //immediately stop network packet processing
+        System.out.println("Immediately stopping network packet processing.");
+        String output = ub.close();
+
+        //write/flush output file if necessary
+        System.out.println("Writing output.");
+        writeOutput(output, filename);
+    }
+
     private static void initSignalHandlers(BestEffortBroadcast beb, String filename) {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
                 handleSignal(beb, filename);
+            }
+        });
+    }
+
+    private static void initSignalHandlers(UniformBroadcast ub, String filename) {
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                handleSignal(ub, filename);
             }
         });
     }
@@ -130,15 +149,17 @@ public class Main {
         // *************************************************************
         int M = parser.bebConfigM();
         List<Config> configs = getBroadcastConfigs(parser, hosts);
+        BroadcastConfig bConfig = new BroadcastConfig(M, me, configs, hosts);
         printConfigs(parser, configs);
 
 
         System.out.println("Doing some initialization\n");
-        PerfectLinks pl = new PerfectLinks(me, configs, hosts);
-        BestEffortBroadcast beb = new BestEffortBroadcast(pl, M);
+        PerfectLinks pl = new PerfectLinks(bConfig);
+        BestEffortBroadcast beb = new BestEffortBroadcast(pl, bConfig);
+        UniformBroadcast ub = new UniformBroadcast(beb, bConfig);
         // initSignalHandlers(pl, parser.output());
-        // UniformBroadcast ub = new UniformBroadcast(pl);
-        initSignalHandlers(beb, parser.output());
+        // initSignalHandlers(beb, parser.output());
+        initSignalHandlers(ub, parser.output());
 
         System.out.println("Broadcasting and delivering messages...\n");
 
