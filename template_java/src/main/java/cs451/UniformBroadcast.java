@@ -2,6 +2,7 @@ package cs451;
 
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class UniformBroadcast extends Thread implements MyEventListener {
@@ -87,9 +88,20 @@ public class UniformBroadcast extends Thread implements MyEventListener {
             // Loop through pending messages
             ArrayList<Message> pendingClone = Messages.getListClone(UniformBroadcast.pending);
             // System.out.printf("Pending clone length: %d\n", pendingClone.size());
+
+            // NOTE: For testing
+            // try {
+            //     TimeUnit.SECONDS.sleep(2);
+            // } catch (InterruptedException ex) {
+            //     System.out.printf("Sleep exception: %s\n", ex);
+            // }
+
             for (Message m: pendingClone) {
                 // If majority hosts for m and m not delivered, deliver
-                if (canDeliver(m) && !Messages.isMessageInList(m, UniformBroadcast.delivered)) {
+                // System.out.printf("Message m: %s\n", m);
+                // System.out.printf("Can Deliver?: %s\n", canDeliver(m));
+                // System.out.printf("Is Message Delivered?: %s\n", Messages.isMessageInList(m, delivered));
+                if (canDeliver(m) && !Messages.isMessageInList(m, delivered)) {
                     deliver(m);
                 }
             }
@@ -104,13 +116,16 @@ public class UniformBroadcast extends Thread implements MyEventListener {
      */
     @Override
     public void bebDeliver(Host h, Message m) {
-        System.out.println("ub - received bebDeliver event");
+        System.out.println("***** ub - received bebDeliver event");
+        System.out.printf("Message: %s\n", m.toString());
+        System.out.printf("Host: %s\n", h.toString());
         
         // Add message to ack
-        Messages.addHostToMap(h, m, UniformBroadcast.ack);
+        Messages.addHostToMap(h, m, ack);
+        Messages.printMessageHostMap(ack);
         
         // If not in pending, add to pending
-        if (Messages.addMessageToList(m, UniformBroadcast.pending)) {
+        if (Messages.addMessageToList(m, pending)) {
             // If not in pending, Broadcast
             beb.broadcast(m);
         }
@@ -124,7 +139,7 @@ public class UniformBroadcast extends Thread implements MyEventListener {
 
     public static void writeDeliver(Message m) {
         outputLock.writeLock().lock();
-        UniformBroadcast.output = String.format("%sd %s %s\n", UniformBroadcast.output, m.getFrom(), m.getContent());
+        UniformBroadcast.output = String.format("%sd %s %s\n", UniformBroadcast.output, m.getFrom().getId(), m.getContent());
         outputLock.writeLock().unlock();
     }
 

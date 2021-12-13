@@ -41,11 +41,11 @@ public class PerfectLinks extends Thread implements MyEventListener {
         String content = m.toString();
 
         // NOTE: For testing
-        try {
-            TimeUnit.SECONDS.sleep(2);
-        } catch (InterruptedException ex) {
-            System.out.printf("Sleep exception: %s\n", ex);
-        }
+        // try {
+        //     TimeUnit.SECONDS.sleep(1);
+        // } catch (InterruptedException ex) {
+        //     System.out.printf("Sleep exception: %s\n", ex);
+        // }
 
         // Send m
         if (udp.send(address, content)) {
@@ -66,8 +66,6 @@ public class PerfectLinks extends Thread implements MyEventListener {
      */
     private void deliver(Host src, Message m) {
         if (Messages.addMessageToMap(src, m, delivered)) {
-            Messages.printMap(delivered);
-            System.out.printf("");
             listener.plDeliver(src, m);
         }
     }
@@ -82,15 +80,15 @@ public class PerfectLinks extends Thread implements MyEventListener {
         String received = new String(packet.getData(), packet.getOffset(), packet.getLength()).trim();
         Message message = new Message(received, hosts, me);
         if (message.getType() == MessageType.BROADCAST) {
-            deliver(message.getFrom(), message);
+            deliver(from, message);
             // Send ack back, even if already delivered
             Message ack = new Message(MessageType.ACK, message.getSequenceNumber(), message.getFrom(), message.getContent());
             send(from, ack);
         } else if (message.getType() == MessageType.ACK) {
             // Process ACK - Remove from messages, add to delivered
             Message m = new Message(MessageType.BROADCAST, message.getSequenceNumber(), message.getFrom(), message.getContent());
-            Messages.removeMessageFromMap(m.getFrom(), m, messages);
-            Messages.addMessageToMap(m.getFrom(), m, delivered);
+            Messages.removeMessageFromMap(from, m, messages);
+            Messages.addMessageToMap(from, m, delivered);
         } else {
             System.out.println("***** Not proper messages sent");
             System.out.printf("Message: %s\n", received);

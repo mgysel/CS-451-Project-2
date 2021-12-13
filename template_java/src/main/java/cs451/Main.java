@@ -158,8 +158,8 @@ public class Main {
         BestEffortBroadcast beb = new BestEffortBroadcast(pl, bConfig);
         UniformBroadcast ub = new UniformBroadcast(beb, bConfig);
         // initSignalHandlers(pl, parser.output());
-        initSignalHandlers(beb, parser.output());
-        // initSignalHandlers(ub, parser.output());
+        // initSignalHandlers(beb, parser.output());
+        initSignalHandlers(ub, parser.output());
 
         System.out.println("Broadcasting and delivering messages...\n");
 
@@ -171,8 +171,8 @@ public class Main {
         // fifo.start();
         // fifo.broadcast();
         pl.start();
-        beb.broadcastAll();
-        // ub.start();
+        // beb.broadcastAll();
+        ub.start();
 
         // *********************************************************************
 

@@ -56,34 +56,52 @@ public class Messages {
      * @return
      */
     public static boolean addHostToMap(Host h, Message m, ConcurrentHashMap<Message, ArrayList<Host>> map) {
-        readLock.lock();
-        ArrayList<Host> hostList = map.get(m);
-
-        // If h does not have any messages, create new message list
-        if (hostList == null) {
-            ArrayList<Host> newHostList = new ArrayList<Host>();
-            newHostList.add(h);
-            
-            readLock.unlock();
-            writeLock.lock();
-            map.put(m, newHostList);
-            writeLock.unlock();
-            return true;
-        }
+        System.out.println("***** Inside addHostToMap");
+        System.out.printf("Message: %s\n", m.toString());
         
-        // If h has msgList, add m
-        int index = hostList.indexOf(h);
-        if(index == -1) {
-            readLock.unlock();
-            writeLock.lock();
-            hostList.add(h);
-            writeLock.unlock();
-            return true;
+        readLock.lock();
+        for (ConcurrentHashMap.Entry<Message, ArrayList<Host>> entry : map.entrySet()) {
+            Message message = entry.getKey();
+            if (message.equals(m)) {
+                ArrayList<Host> hostList = entry.getValue();
+                // If m does not have any hosts, create new host list
+                if (hostList == null) {
+                    System.out.println("hostList is null");
+                    ArrayList<Host> newHostList = new ArrayList<Host>();
+                    newHostList.add(h);
+                    
+                    readLock.unlock();
+                    writeLock.lock();
+                    map.put(message, newHostList);
+                    writeLock.unlock();
+                    return true;
+                }
+                
+                int index = hostList.indexOf(h);
+                if(index == -1) {
+                    // If h has msgList, add m
+                    readLock.unlock();
+                    writeLock.lock();
+                    hostList.add(h);
+                    writeLock.unlock();
+                    return true;
+                } else {
+                    // If msgList already contains m, return false
+                    readLock.unlock();
+                    return false;
+                }
+            }
         }
 
-        // If m already in h's msgList, return false
+        // If m not in map, add
+        ArrayList<Host> newHostList = new ArrayList<Host>();
+        newHostList.add(h);
+        
         readLock.unlock();
-        return false;
+        writeLock.lock();
+        map.put(m, newHostList);
+        writeLock.unlock();
+        return true;
     }
 
     public static Message isMessageInMap(Host h, Message m, ConcurrentHashMap<Host, ArrayList<Message>> map) {
@@ -106,10 +124,10 @@ public class Messages {
 
     public static boolean isMessageInList(Message m, ArrayList<Message> list) {
         readLock.lock();
-        int index = list.indexOf(m);
-        readLock.unlock();
-        if (index != -1) {
-            return true;
+        for (Message message: list) {
+            if (message.equals(m)) {
+                return true;
+            }
         }
         return false;
     }
@@ -185,16 +203,23 @@ public class Messages {
 
     public static boolean isMajorityInMap(int numHosts, Message m, ConcurrentHashMap<Message, ArrayList<Host>> map) {
         readLock.lock();
-        ArrayList<Host> hostList = map.get(m);
-        if (hostList != null) {
-            double numAcks = (double) hostList.size();
-            double total = (double) numHosts;
-            double perAcks = numAcks / total;
+        for (ConcurrentHashMap.Entry<Message, ArrayList<Host>> entry : map.entrySet()) {
+            Message message = entry.getKey();
+            if (message.equals(m)) {
+                ArrayList<Host> hostList = entry.getValue();
+                if (hostList != null) {
+                    double numAcks = (double) hostList.size();
+                    double total = (double) numHosts;
+                    double perAcks = numAcks / total;
 
-            if (perAcks > 0.5) {
+                    readLock.unlock();
+                    if (perAcks > 0.5) {
+                        return true;
+                    } 
+                }
+
                 readLock.unlock();
-                readLock.unlock();
-                return true;
+                return false;
             }
         }
 
@@ -206,7 +231,7 @@ public class Messages {
      * Prints a map - useful for debugging
      * @param map
      */
-    public static void printMap(ConcurrentHashMap<Host, ArrayList<Message>> map) {
+    public static void printHostMessageMap(ConcurrentHashMap<Host, ArrayList<Message>> map) {
         readLock.lock();
         System.out.println("***** Print Map");
         for (Map.Entry<Host, ArrayList<Message>> entry : map.entrySet()) {
@@ -216,6 +241,25 @@ public class Messages {
             System.out.printf("* Host: %d\n", host.getId());
             for (Message m: hostDelivered) {
                 System.out.printf("* Message: %s\n", m.toString());
+            }
+        }
+        readLock.unlock();
+    }
+
+    /**
+     * Prints a map - useful for debugging
+     * @param map
+     */
+    public static void printMessageHostMap(ConcurrentHashMap<Message, ArrayList<Host>> map) {
+        readLock.lock();
+        System.out.println("***** Print Map");
+        for (Map.Entry<Message, ArrayList<Host>> entry : map.entrySet()) {
+            Message m = entry.getKey();
+            ArrayList<Host> hostDelivered = entry.getValue();
+
+            System.out.printf("* Message: %s\n", m.toString());
+            for (Host h: hostDelivered) {
+                System.out.printf("* Host: %d\n", h.getId());
             }
         }
         readLock.unlock();
