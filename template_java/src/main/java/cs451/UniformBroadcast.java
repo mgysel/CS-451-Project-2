@@ -30,10 +30,26 @@ public class UniformBroadcast extends Thread implements MyEventListener {
         UniformBroadcast.output = "";
     }
 
+    /**
+     * Broadcast all messages
+    */
+    public void broadcastAll() {
+        System.out.println("Inside Broadcast All");
+        int i = 1;
+        while (i <= bConfig.getM()) {
+            Message m = new Message(MessageType.BROADCAST, i, bConfig.getMe(), Integer.toString(i));
+            // System.out.printf("Message: %s\n", m.toString());
+            broadcast(m);
+            i += 1;
+        }
+    }
+
     // Broadcast
     public void broadcast(Message m) {
+        System.out.println("ub - broadcast");
+        
         // Add m to pending
-        Messages.addMessageToList(m, pending);
+        Messages.addMessageToList(m, UniformBroadcast.pending);
 
         // Trigger beb Broadcast
         beb.broadcast(m);
@@ -45,12 +61,15 @@ public class UniformBroadcast extends Thread implements MyEventListener {
     }
 
     public void deliver(Message m) {
+        System.out.println("ub - deliver");
+
         writeDeliver(m);
-        Messages.addMessageToList(m, delivered);
+        Messages.addMessageToList(m, UniformBroadcast.delivered);
     }
 
     private boolean canDeliver(Message m) {
         if (Messages.isMajorityInMap(bConfig.getHosts().getHosts().size(), m, ack)) {
+            System.out.println("CAN DELIVER");
             return true;
         }
 
@@ -61,12 +80,16 @@ public class UniformBroadcast extends Thread implements MyEventListener {
     * Check if messages can be delivered, deliver
     */
     public void run() {
+        System.out.println("Inside ub run");
+        broadcastAll();
         while (true) {
+            // System.out.println("Inside run - whileLoop");
             // Loop through pending messages
             ArrayList<Message> pendingClone = Messages.getListClone(UniformBroadcast.pending);
+            // System.out.printf("Pending clone length: %d\n", pendingClone.size());
             for (Message m: pendingClone) {
                 // If majority hosts for m and m not delivered, deliver
-                if (canDeliver(m) && !Messages.isMessageInList(m, delivered)) {
+                if (canDeliver(m) && !Messages.isMessageInList(m, UniformBroadcast.delivered)) {
                     deliver(m);
                 }
             }
@@ -81,12 +104,14 @@ public class UniformBroadcast extends Thread implements MyEventListener {
      */
     @Override
     public void bebDeliver(Host h, Message m) {
+        System.out.println("ub - received bebDeliver event");
+        
         // Add message to ack
         Messages.addHostToMap(h, m, UniformBroadcast.ack);
         
         // If not in pending, add to pending
         if (Messages.addMessageToList(m, UniformBroadcast.pending)) {
-            // Broadcast
+            // If not in pending, Broadcast
             beb.broadcast(m);
         }
     }

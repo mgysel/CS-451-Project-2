@@ -33,7 +33,7 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
         int i = 1;
         while (i <= M) {
             Message m = new Message(MessageType.BROADCAST, i, pl.getMe(), Integer.toString(i));
-            System.out.printf("Message: %s\n", m.toString());
+            // System.out.printf("Message: %s\n", m.toString());
             broadcast(m);
             i += 1;
         }
@@ -41,15 +41,12 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
 
     // Broadcast
     public void broadcast(Message m) {
-        System.out.println("Inside Broadcast");
-
         // For all peers, pl.send(pi, m)
         List<Host> hosts = pl.getHosts().getHosts();
         for (Host dest: hosts) {
             pl.send(dest, m);
         }
         writeBroadcast(m);
-        System.out.printf("Output: %s\n", output);
     }
 
     /**
@@ -59,9 +56,8 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
      */
     private void deliver(Host src, Message m) {
         if (Messages.addMessageToMap(src, m, delivered)) {
-            System.out.println("Writing deliver");
+            // System.out.println("Writing deliver");
             writeDeliver(src, m);
-            System.out.printf("Output: %s\n", BestEffortBroadcast.output);
         }
     }
 
@@ -83,9 +79,9 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
 
     @Override
     public void plDeliver(Host src, Message m) {
+        System.out.println("beb - Inside PL Deliver");
         deliver(src, m);
         listener.bebDeliver(src, m);
-        // System.out.println("Caught the delivery");
     }
 
     @Override

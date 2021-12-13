@@ -170,7 +170,7 @@ public class Messages {
     public static boolean addMessageToList(Message m, ArrayList<Message> list) {
         readLock.lock();
         int index = list.indexOf(m);
-        if (index != -1) {
+        if (index == -1) {
             readLock.unlock();
             writeLock.lock();
             list.add(m);

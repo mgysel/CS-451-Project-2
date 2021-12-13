@@ -40,12 +40,12 @@ public class PerfectLinks extends Thread implements MyEventListener {
         InetSocketAddress address = dest.getAddress();
         String content = m.toString();
 
-        // // NOTE: For testing
-        // try {
-        //     TimeUnit.SECONDS.sleep(2);
-        // } catch (InterruptedException ex) {
-        //     System.out.printf("Sleep exception: %s\n", ex);
-        // }
+        // NOTE: For testing
+        try {
+            TimeUnit.SECONDS.sleep(2);
+        } catch (InterruptedException ex) {
+            System.out.printf("Sleep exception: %s\n", ex);
+        }
 
         // Send m
         if (udp.send(address, content)) {
@@ -65,8 +65,8 @@ public class PerfectLinks extends Thread implements MyEventListener {
      * @param m
      */
     private void deliver(Host src, Message m) {
-        if (Messages.isMessageInMap(src, m, delivered) == null) {
-            // System.out.println("Inside Deliver");
+        if (Messages.addMessageToMap(src, m, delivered)) {
+            System.out.println("PL - Inside PL Deliver");
             listener.plDeliver(src, m);
         }
     }
@@ -148,7 +148,7 @@ public class PerfectLinks extends Thread implements MyEventListener {
 
     @Override
     public void plDeliver(Host src, Message m) {
-        deliver(src, m);
+        // deliver(src, m);
         // System.out.println("Caught the delivery");
     }
     
