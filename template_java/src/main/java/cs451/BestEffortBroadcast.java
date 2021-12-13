@@ -29,12 +29,12 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
      * Broadcast all messages
      */
     public void broadcastAll() {
-        System.out.println("Inside Broadcast All");
         int i = 1;
         while (i <= M) {
             Message m = new Message(MessageType.BROADCAST, i, pl.getMe(), Integer.toString(i));
             // System.out.printf("Message: %s\n", m.toString());
             broadcast(m);
+            writeBroadcast(m);
             i += 1;
         }
     }
@@ -46,7 +46,6 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
         for (Host dest: hosts) {
             pl.send(dest, m);
         }
-        writeBroadcast(m);
     }
 
     /**
@@ -79,7 +78,6 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
 
     @Override
     public void plDeliver(Host src, Message m) {
-        System.out.println("beb - Inside PL Deliver");
         deliver(src, m);
         listener.bebDeliver(src, m);
     }

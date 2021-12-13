@@ -66,7 +66,8 @@ public class PerfectLinks extends Thread implements MyEventListener {
      */
     private void deliver(Host src, Message m) {
         if (Messages.addMessageToMap(src, m, delivered)) {
-            System.out.println("PL - Inside PL Deliver");
+            Messages.printMap(delivered);
+            System.out.printf("");
             listener.plDeliver(src, m);
         }
     }
@@ -81,15 +82,15 @@ public class PerfectLinks extends Thread implements MyEventListener {
         String received = new String(packet.getData(), packet.getOffset(), packet.getLength()).trim();
         Message message = new Message(received, hosts, me);
         if (message.getType() == MessageType.BROADCAST) {
-            deliver(from, message);
+            deliver(message.getFrom(), message);
             // Send ack back, even if already delivered
-            Message ack = new Message(MessageType.ACK, message.getSequenceNumber(), me, message.getContent());
+            Message ack = new Message(MessageType.ACK, message.getSequenceNumber(), message.getFrom(), message.getContent());
             send(from, ack);
         } else if (message.getType() == MessageType.ACK) {
             // Process ACK - Remove from messages, add to delivered
-            Message m = new Message(MessageType.BROADCAST, message.getSequenceNumber(), me, message.getContent());
-            Messages.removeMessageFromMap(from, m, messages);
-            Messages.addMessageToMap(from, m, delivered);
+            Message m = new Message(MessageType.BROADCAST, message.getSequenceNumber(), message.getFrom(), message.getContent());
+            Messages.removeMessageFromMap(m.getFrom(), m, messages);
+            Messages.addMessageToMap(m.getFrom(), m, delivered);
         } else {
             System.out.println("***** Not proper messages sent");
             System.out.printf("Message: %s\n", received);

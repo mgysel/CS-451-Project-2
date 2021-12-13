@@ -1,6 +1,7 @@
 package cs451;
 
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -199,5 +200,24 @@ public class Messages {
 
         readLock.unlock();
         return false;
+    }
+
+    /**
+     * Prints a map - useful for debugging
+     * @param map
+     */
+    public static void printMap(ConcurrentHashMap<Host, ArrayList<Message>> map) {
+        readLock.lock();
+        System.out.println("***** Print Map");
+        for (Map.Entry<Host, ArrayList<Message>> entry : map.entrySet()) {
+            Host host = entry.getKey();
+            ArrayList<Message> hostDelivered = entry.getValue();
+
+            System.out.printf("* Host: %d\n", host.getId());
+            for (Message m: hostDelivered) {
+                System.out.printf("* Message: %s\n", m.toString());
+            }
+        }
+        readLock.unlock();
     }
 }
