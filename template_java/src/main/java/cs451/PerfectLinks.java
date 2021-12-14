@@ -40,7 +40,7 @@ public class PerfectLinks extends Thread implements MyEventListener {
         InetSocketAddress address = dest.getAddress();
         String content = m.toString();
 
-        // NOTE: For testing
+        // // NOTE: For testing
         // try {
         //     TimeUnit.SECONDS.sleep(1);
         // } catch (InterruptedException ex) {
@@ -79,14 +79,15 @@ public class PerfectLinks extends Thread implements MyEventListener {
         Host from = hosts.getHostByAddress(packet.getAddress(), packet.getPort());
         String received = new String(packet.getData(), packet.getOffset(), packet.getLength()).trim();
         Message message = new Message(received, hosts, me);
+        System.out.printf("\n***** PL RECEIVED - %s\n", message.toString());
         if (message.getType() == MessageType.BROADCAST) {
             deliver(from, message);
             // Send ack back, even if already delivered
-            Message ack = new Message(MessageType.ACK, message.getSequenceNumber(), message.getFrom(), message.getContent());
+            Message ack = new Message(MessageType.ACK, message.getSequenceNumber(), message.getFrom(), message.getContent(), message.getVC());
             send(from, ack);
         } else if (message.getType() == MessageType.ACK) {
             // Process ACK - Remove from messages, add to delivered
-            Message m = new Message(MessageType.BROADCAST, message.getSequenceNumber(), message.getFrom(), message.getContent());
+            Message m = new Message(MessageType.BROADCAST, message.getSequenceNumber(), message.getFrom(), message.getContent(), message.getVC());
             Messages.removeMessageFromMap(from, m, messages);
             Messages.addMessageToMap(from, m, delivered);
         } else {

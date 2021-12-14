@@ -1,5 +1,7 @@
 package cs451;
 
+import java.util.ArrayList;
+
 enum MessageType {
     BROADCAST,
     ACK,
@@ -11,12 +13,14 @@ public class Message implements Comparable<Message> {
     private int sequenceNumber;
     private Host from;
     private String content;
+    private ArrayList<Integer> VC;
 
-    public Message(MessageType type, int sequenceNumber, Host from, String content) {
+    public Message(MessageType type, int sequenceNumber, Host from, String content, ArrayList<Integer> VC) {
         this.type = type;
         this.sequenceNumber = sequenceNumber;
         this.from = from;
         this.content = content;
+        this.VC = VC;
     }
 
     // public Message(MessageType type, int sequenceNumber, Host from, String content, boolean receivedAck) {
@@ -29,7 +33,7 @@ public class Message implements Comparable<Message> {
 
     public Message(String message, Hosts hosts, Host me) {
         String[] messageComponents = message.split("/");
-        if (messageComponents.length == 4) {
+        if (messageComponents.length == 4 || messageComponents.length == 5) {
             // Type
             if (messageComponents[0].equals("A")) {
                 this.type = MessageType.ACK;
@@ -58,12 +62,30 @@ public class Message implements Comparable<Message> {
             }
             // Content
             this.content = messageComponents[3];
+            // VectorClock
+            ArrayList<Integer> vcComponents = new ArrayList<Integer>();
+            if (messageComponents.length == 5) {
+                String vcString = messageComponents[4];
+                String[] vcSplit = vcString.split(",");
+                
+                for (String vcComponentString: vcSplit) {
+                    try {
+                        Integer vcComponentInt = Integer.parseInt(vcComponentString);
+                        vcComponents.add(vcComponentInt);
+                    } catch (NumberFormatException e) {
+                        System.out.printf("Cannot convert message because ID is not an integer: ", e);
+                    } catch (NullPointerException e) {
+                        System.out.printf("Cannot convert message because ID is a null pointer: ", e);
+                    }
+                }
+            }
+            this.VC = vcComponents;
         }
     }
 
     public static boolean isValidMessage(String message) {
         String[] messageComponents = message.split("/");
-        if (messageComponents.length == 4) {
+        if (messageComponents.length == 5) {
             return true;
         }
         return false;
@@ -104,7 +126,14 @@ public class Message implements Comparable<Message> {
             } else if (this.type == MessageType.FORWARD) {
                 output += "F";
             }
-            output = String.format("%s/%d/%d/%s", output, this.getSequenceNumber(), this.from.getId(), this.content);
+            String vcString = "";
+            for (int i=0; i < this.VC.size(); i++) {
+                if (i != 0) {
+                    vcString += ",";
+                }
+                vcString += String.format("%s", Integer.toString(this.VC.get(i)));
+            }
+            output = String.format("%s/%d/%d/%s/%s", output, this.getSequenceNumber(), this.from.getId(), this.content, vcString);
         }
 
         return output;
@@ -122,8 +151,12 @@ public class Message implements Comparable<Message> {
         MessageType type = this.getType();
         Host from = this.getFrom();
         String content = new String(this.getContent());
+        ArrayList<Integer> vcClone = new ArrayList<Integer>();
+        for (Integer i: this.getVC()) {
+            vcClone.add(i);
+        }
 
-        Message clone = new Message(type, sequenceNumber, from, content);
+        Message clone = new Message(type, sequenceNumber, from, content, vcClone);
         return clone;
     }
 
@@ -145,5 +178,9 @@ public class Message implements Comparable<Message> {
 
     public String getContent() {
         return this.content;
+    }
+
+    public ArrayList<Integer> getVC() {
+        return this.VC;
     }
 }

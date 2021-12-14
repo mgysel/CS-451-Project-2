@@ -56,9 +56,6 @@ public class Messages {
      * @return
      */
     public static boolean addHostToMap(Host h, Message m, ConcurrentHashMap<Message, ArrayList<Host>> map) {
-        System.out.println("***** Inside addHostToMap");
-        System.out.printf("Message: %s\n", m.toString());
-        
         readLock.lock();
         for (ConcurrentHashMap.Entry<Message, ArrayList<Host>> entry : map.entrySet()) {
             Message message = entry.getKey();
@@ -203,6 +200,27 @@ public class Messages {
         return false;
     }
 
+    /**
+     * Removes message from list
+     * @param m
+     * @param list
+     * @return true if removed, false if not in list
+     */
+    public static boolean removeMessageFromList(Message m, ArrayList<Message> list) {
+        readLock.lock();
+        int index = list.indexOf(m);
+        readLock.unlock();
+
+        if (index != -1) {
+            writeLock.lock();
+            list.remove(m);
+            writeLock.unlock();
+            return true;
+        }
+
+        return false;
+    }
+
     public static boolean isMajorityInMap(int numHosts, Message m, ConcurrentHashMap<Message, ArrayList<Host>> map) {
         readLock.lock();
         for (ConcurrentHashMap.Entry<Message, ArrayList<Host>> entry : map.entrySet()) {
@@ -263,6 +281,21 @@ public class Messages {
             for (Host h: hostDelivered) {
                 System.out.printf("* Host: %d\n", h.getId());
             }
+        }
+        readLock.unlock();
+    }
+
+        /**
+     * Prints a map - useful for debugging
+     * @param map
+     */
+    public static void printMessageList(ArrayList<Message> list) {
+        readLock.lock();
+        System.out.println("\n***** Print Message list");
+        int i = 1;
+        for (Message m: list) {
+            System.out.printf("%d: %s\n", i, m.toString());
+            i++;
         }
         readLock.unlock();
     }

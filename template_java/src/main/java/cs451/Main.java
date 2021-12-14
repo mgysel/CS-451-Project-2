@@ -117,7 +117,7 @@ public class Main {
                 }
             }
         }
-        
+
         return configs;
     }
 
@@ -216,7 +216,8 @@ public class Main {
         LocalizedCausalBroadcast lcb = new LocalizedCausalBroadcast(ub, bConfig);
         // initSignalHandlers(pl, parser.output());
         // initSignalHandlers(beb, parser.output());
-        initSignalHandlers(ub, parser.output());
+        // initSignalHandlers(ub, parser.output());
+        initSignalHandlers(lcb, parser.output());
 
         System.out.println("Broadcasting and delivering messages...\n");
 
@@ -229,8 +230,10 @@ public class Main {
         // fifo.broadcast();
         pl.start();
         // beb.broadcastAll();
-        // ub.broadcastAll();
         ub.start();
+        // ub.broadcastAll();
+        lcb.start();
+        lcb.broadcastAll();
 
 
         // *********************************************************************

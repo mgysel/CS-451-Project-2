@@ -40,7 +40,7 @@ public class UniformBroadcast extends Thread implements MyEventListener {
         System.out.println("Inside Broadcast All");
         int i = 1;
         while (i <= bConfig.getM()) {
-            Message m = new Message(MessageType.BROADCAST, i, bConfig.getMe(), Integer.toString(i));
+            Message m = new Message(MessageType.BROADCAST, i, bConfig.getMe(), Integer.toString(i), new ArrayList<Integer>());
             // System.out.printf("Message: %s\n", m.toString());
             broadcast(m);
             i += 1;
@@ -65,7 +65,6 @@ public class UniformBroadcast extends Thread implements MyEventListener {
 
     public void deliver(Message m) {
         // System.out.println("ub - deliver");
-
         writeDeliver(m);
         Messages.addMessageToList(m, UniformBroadcast.delivered);
     }
@@ -104,6 +103,7 @@ public class UniformBroadcast extends Thread implements MyEventListener {
                 // System.out.printf("Is Message Delivered?: %s\n", Messages.isMessageInList(m, delivered));
                 if (canDeliver(m) && !Messages.isMessageInList(m, delivered)) {
                     deliver(m);
+                    listener.ubDeliver(m.getFrom(), m);
                 }
             }
         }
@@ -112,7 +112,7 @@ public class UniformBroadcast extends Thread implements MyEventListener {
     public void setMyEventListener (MyEventListener listener) {
         this.listener = listener;
     }
-    
+
     /**
      * On beb deliver, add m to ack.
      * If m not in pending, add to pending and beb broadcast
@@ -121,13 +121,13 @@ public class UniformBroadcast extends Thread implements MyEventListener {
      */
     @Override
     public void bebDeliver(Host h, Message m) {
-        System.out.println("***** ub - received bebDeliver event");
-        System.out.printf("Message: %s\n", m.toString());
-        System.out.printf("Host: %s\n", h.toString());
+        // System.out.println("\n\n***** ub - received bebDeliver event");
+        // System.out.printf("Message: %s\n", m.toString());
+        // System.out.printf("Host: %s\n", h.toString());
         
         // Add message to ack
         Messages.addHostToMap(h, m, ack);
-        Messages.printMessageHostMap(ack);
+        // Messages.printMessageHostMap(ack);
         
         // If not in pending, add to pending
         if (Messages.addMessageToList(m, pending)) {

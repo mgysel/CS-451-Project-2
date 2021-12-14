@@ -31,7 +31,7 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
     public void broadcastAll() {
         int i = 1;
         while (i <= M) {
-            Message m = new Message(MessageType.BROADCAST, i, pl.getMe(), Integer.toString(i));
+            Message m = new Message(MessageType.BROADCAST, i, pl.getMe(), Integer.toString(i), new ArrayList<Integer>());
             // System.out.printf("Message: %s\n", m.toString());
             broadcast(m);
             writeBroadcast(m);
