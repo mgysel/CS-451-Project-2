@@ -14,7 +14,7 @@ public class PLConfigParser {
     private String path;
     private static final String SPACES_REGEX = "\\s+";
 
-    private List<Config> configs = new ArrayList<>();
+    private List<UBConfig> configs = new ArrayList<>();
 
     public boolean populate(String filename) {
         File file = new File(filename);
@@ -43,7 +43,7 @@ public class PLConfigParser {
                     return false;
                 } 
 
-                Config newConfig = new Config(m, id);
+                UBConfig newConfig = new UBConfig(m, id);
                 configs.add(newConfig);
             }
         } catch (IOException e) {
@@ -79,14 +79,14 @@ public class PLConfigParser {
         return path;
     }
 
-    public List<Config> getConfigs() {
+    public List<UBConfig> getConfigs() {
         return configs;
     }
 
     // Sort by id
-    class ConfigsComparator implements Comparator<Config> {
+    class ConfigsComparator implements Comparator<UBConfig> {
 
-        public int compare(Config a, Config b) {
+        public int compare(UBConfig a, UBConfig b) {
             return a.getId() - b.getId();
         }
 

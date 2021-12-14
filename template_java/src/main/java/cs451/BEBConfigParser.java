@@ -8,7 +8,6 @@ import java.io.File;
 public class BEBConfigParser {
 
     private String path;
-
     private int m;
 
     public boolean populate(String filename) {

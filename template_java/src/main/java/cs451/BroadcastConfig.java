@@ -4,10 +4,10 @@ import java.util.List;
 public class BroadcastConfig {
     public int M;
     public Host me;
-    public List<Config> configs;
+    public List<LCBConfig> configs;
     public Hosts hosts;
 
-    public BroadcastConfig(int M, Host me, List<Config> configs, Hosts hosts) {
+    public BroadcastConfig(int M, Host me, List<LCBConfig> configs, Hosts hosts) {
         this.M = M;
         this.me = me;
         this.configs = configs;
@@ -22,7 +22,7 @@ public class BroadcastConfig {
         return me;
     }
 
-    public List<Config> getConfigs() {
+    public List<LCBConfig> getConfigs() {
         return configs;
     }
 

@@ -1,12 +1,12 @@
 package cs451;
 
-public class Config {
+public class UBConfig {
     // How many messages the process should send
     private int m;
     // Index of process
     private int id;
 
-    public Config(int m, int id) {
+    public UBConfig(int m, int id) {
         this.m = m;
         this.id = id;
     }

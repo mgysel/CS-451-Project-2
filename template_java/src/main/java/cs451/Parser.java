@@ -11,6 +11,7 @@ public class Parser {
     private OutputParser outputParser;
     private PLConfigParser plConfigParser;
     private BEBConfigParser bebConfigParser;
+    private LCBConfigParser lcbConfigParser;
 
     public Parser(String[] args) {
         this.args = args;
@@ -24,6 +25,7 @@ public class Parser {
         outputParser = new OutputParser();
         plConfigParser = new PLConfigParser();
         bebConfigParser = new BEBConfigParser();
+        lcbConfigParser = new LCBConfigParser();
 
         int argsNum = args.length;
         if (argsNum != Constants.ARG_LIMIT_CONFIG) {
@@ -50,7 +52,11 @@ public class Parser {
         //     help();
         // }
 
-        if (!bebConfigParser.populate(args[Constants.CONFIG_VALUE])) {
+        // if (!bebConfigParser.populate(args[Constants.CONFIG_VALUE])) {
+        //     help();
+        // }
+
+        if (!lcbConfigParser.populate(args[Constants.CONFIG_VALUE])) {
             help();
         }
     }
@@ -76,7 +82,7 @@ public class Parser {
         return plConfigParser.getPath();
     }
 
-    public List<Config> plConfigConfigs() {
+    public List<UBConfig> plConfigConfigs() {
         return plConfigParser.getConfigs();
     }
 
@@ -86,6 +92,14 @@ public class Parser {
 
     public int bebConfigM() {
         return bebConfigParser.getM();
+    }
+
+    public String lcbConfigPath() {
+        return lcbConfigParser.getPath();
+    }
+
+    public List<LCBConfig> lcbConfigConfigs() {
+        return lcbConfigParser.getConfigs();
     }
 
 }

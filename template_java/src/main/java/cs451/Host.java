@@ -3,6 +3,7 @@ package cs451;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.List;
 
 public class Host {
 
@@ -12,6 +13,7 @@ public class Host {
     private String ip;
     private int port = -1;
     InetSocketAddress address;
+    private List<Integer> dependencies;
 
     public boolean populate(String idString, String ipString, String portString) {
         try {
@@ -59,6 +61,31 @@ public class Host {
 
     public InetSocketAddress getAddress() {
         return address;
+    }
+
+    public void setDependencies(List<Integer> dependencies) {
+        this.dependencies = dependencies;
+    }
+
+    public List<Integer> getDependencies() {
+        return dependencies;
+    }
+
+    @Override
+    public String toString() {
+        String output = "";
+        if (this != null) {
+            // id, address, dependencies
+            output += String.format("ID: %d\n", this.id);
+            output += String.format("Address: %s\n", this.address.toString());
+            output += String.format("Dependencies: ");
+            for (int d: this.dependencies) {
+                output += String.format("%d ", d);
+            }
+            output += String.format("\n");
+        }
+
+        return output;
     }
 
 }

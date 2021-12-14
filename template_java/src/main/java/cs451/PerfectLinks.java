@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 public class PerfectLinks extends Thread implements MyEventListener {
     private Host me;
-    public List<Config> configs;
+    public List<LCBConfig> configs;
     public Hosts hosts;
     private UDP udp;
     static ConcurrentHashMap<Host, ArrayList<Message>> messages;
@@ -125,7 +125,7 @@ public class PerfectLinks extends Thread implements MyEventListener {
         udp.socket.close();
     }
 
-    public List<Config> getConfigs() {
+    public List<LCBConfig> getConfigs() {
         return configs;
     }
 

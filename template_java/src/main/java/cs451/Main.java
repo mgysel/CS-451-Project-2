@@ -37,6 +37,16 @@ public class Main {
         writeOutput(output, filename);
     }
 
+    private static void handleSignal(LocalizedCausalBroadcast lcb, String filename) {
+        //immediately stop network packet processing
+        System.out.println("Immediately stopping network packet processing.");
+        String output = lcb.close();
+
+        //write/flush output file if necessary
+        System.out.println("Writing output.");
+        writeOutput(output, filename);
+    }
+
     private static void initSignalHandlers(BestEffortBroadcast beb, String filename) {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
@@ -51,6 +61,15 @@ public class Main {
             @Override
             public void run() {
                 handleSignal(ub, filename);
+            }
+        });
+    }
+
+    private static void initSignalHandlers(LocalizedCausalBroadcast lcv, String filename) {
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                handleSignal(lcb, filename);
             }
         });
     }
@@ -74,14 +93,29 @@ public class Main {
         return me;
     }
 
-    private static List<Config> getBroadcastConfigs(Parser parser, Hosts hosts) {
+    private static List<UBConfig> getBEBBroadcastConfigs(Parser parser, Hosts hosts) {
         int m = parser.bebConfigM();
         System.out.println("Get Broadcast Configs");
         System.out.println(m);
-        List<Config> configs = new ArrayList<Config>();
+        List<UBConfig> configs = new ArrayList<UBConfig>();
         for (Host host: hosts.getHosts()) {
-            Config config = new Config(m, host.getId());
+            UBConfig config = new UBConfig(m, host.getId());
             configs.add(config);
+        }
+
+        return configs;
+    }
+
+    private static List<LCBConfig> getLCBConfigs(Parser parser, Hosts hosts) {
+        System.out.println("Get CO Broadcast Configs");
+        List<LCBConfig> configs = parser.lcbConfigConfigs();
+        
+        for (Host host: hosts.getHosts()) {
+            for (LCBConfig lcbConfig: configs) {
+                if (host.getId() == lcbConfig.getId()) {
+                    host.setDependencies(lcbConfig.getDependencies());
+                }
+            }
         }
 
         return configs;
@@ -111,15 +145,24 @@ public class Main {
         System.out.println();
     }
 
-    private static void printConfigs(Parser parser, List<Config> configs) {
+    private static void printConfigs(Parser parser, List<LCBConfig> configs) {
         System.out.println("Path to config:");
         System.out.println("===============");
-        System.out.println(parser.bebConfigPath() + "\n");
+        System.out.println(parser.lcbConfigPath() + "\n");
         System.out.println("List of configs is:");
         System.out.println("==========================");
-        for (Config config: configs) {
-            System.out.println(config.getId());
+        for (LCBConfig config: configs) {
+            System.out.printf("%d\n", config.getId());
             System.out.println("M: " + config.getM());
+            List<Integer> dependencies = config.getDependencies();
+            System.out.printf("Dependencies: ");
+            if (dependencies.size() == 0) {
+                System.out.print("None");
+            } else {
+                for (int dependency: dependencies) {
+                    System.out.printf("%d ", dependency);
+                }
+            }
             System.out.println();
         }
         System.out.println();
@@ -147,10 +190,24 @@ public class Main {
         // *************************************************************
         // UniformBroadcast Configuration
         // *************************************************************
-        int M = parser.bebConfigM();
-        List<Config> configs = getBroadcastConfigs(parser, hosts);
+        // int M = parser.bebConfigM();
+        // List<UBConfig> configs = getBEBBroadcastConfigs(parser, hosts);
+        // BroadcastConfig bConfig = new BroadcastConfig(M, me, configs, hosts);
+        // printConfigs(parser, configs);
+
+        // *************************************************************
+        // Localized Causal Broadcast Configuration
+        // *************************************************************
+        List<LCBConfig> configs = getLCBConfigs(parser, hosts);
+
+        int M = configs.get(0).getM();
         BroadcastConfig bConfig = new BroadcastConfig(M, me, configs, hosts);
         printConfigs(parser, configs);
+
+        // System.out.println("Correct hosts?");
+        // for (Host host: hosts.getHosts()) {
+        //     System.out.println(host.toString());
+        // }
 
 
         System.out.println("Doing some initialization\n");
