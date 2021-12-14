@@ -77,15 +77,19 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
     }
 
     @Override
-    public void plDeliver(Host src, Message m) {
-        deliver(src, m);
-        listener.bebDeliver(src, m);
+    public void plDeliver(Host h, Message m) {
+        deliver(h, m);
+        listener.bebDeliver(h, m);
     }
 
     @Override
-    public void bebDeliver(Host p, Message m) {
+    public void bebDeliver(Host h, Message m) {
         // TODO Auto-generated method stub
-        
+    }
+
+    @Override
+    public void ubDeliver(Host h, Message m) {
+        // TODO Auto-generated method stub
     }
 
     public String close() {

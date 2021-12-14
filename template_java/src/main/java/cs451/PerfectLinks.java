@@ -147,13 +147,16 @@ public class PerfectLinks extends Thread implements MyEventListener {
 
     @Override
     public void plDeliver(Host src, Message m) {
-        // deliver(src, m);
         // System.out.println("Caught the delivery");
     }
     
     @Override
     public void bebDeliver(Host p, Message m) {
         // TODO Auto-generated method stub
-        
+    }
+
+    @Override
+    public void ubDeliver(Host p, Message m) {
+        // TODO Auto-generated method stub
     }
 }

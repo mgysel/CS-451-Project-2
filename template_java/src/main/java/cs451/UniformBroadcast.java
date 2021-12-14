@@ -5,10 +5,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class UniformBroadcast implements MyEventListener {
+public class UniformBroadcast extends Thread implements MyEventListener {
     BestEffortBroadcast beb;
     BroadcastConfig bConfig;
     private static String output;
+
+    private MyEventListener listener; 
 
     // Stores messages beb-delivered but not urb-delivered
     static ArrayList<Message> pending;
@@ -43,31 +45,6 @@ public class UniformBroadcast implements MyEventListener {
             broadcast(m);
             i += 1;
         }
-
-        while (true) {
-            // System.out.println("Inside run - whileLoop");
-            // Loop through pending messages
-            ArrayList<Message> pendingClone = Messages.getListClone(pending);
-            // System.out.printf("Pending clone length: %d\n", pendingClone.size());
-
-            // // NOTE: For testing
-            // try {
-            //     TimeUnit.SECONDS.sleep(2);
-            // } catch (InterruptedException ex) {
-            //     System.out.printf("Sleep exception: %s\n", ex);
-            // }
-
-            for (Message m: pendingClone) {
-                // If majority hosts for m and m not delivered, deliver
-                // System.out.printf("Message m: %s\n", m);
-                // System.out.printf("Can Deliver?: %s\n", canDeliver(m));
-                // System.out.printf("Is Message Delivered?: %s\n", Messages.isMessageInList(m, delivered));
-                if (canDeliver(m) && !Messages.isMessageInList(m, delivered)) {
-                    deliver(m);
-                }
-            }
-        }
-
     }
 
     // Broadcast
@@ -102,37 +79,40 @@ public class UniformBroadcast implements MyEventListener {
         return false;
     }
 
-    // /**
-    // * Check if messages can be delivered, deliver
-    // */
-    // public void run() {
-    //     System.out.println("Inside ub run");
-    //     broadcastAll();
-    //     while (true) {
-    //         // System.out.println("Inside run - whileLoop");
-    //         // Loop through pending messages
-    //         ArrayList<Message> pendingClone = Messages.getListClone(UniformBroadcast.pending);
-    //         // System.out.printf("Pending clone length: %d\n", pendingClone.size());
+    /**
+    * Check if messages can be delivered, deliver
+    */
+    public void run() {
+        System.out.println("Inside ub run");
+        while (true) {
+            // System.out.println("Inside run - whileLoop");
+            // Loop through pending messages
+            ArrayList<Message> pendingClone = Messages.getListClone(pending);
+            // System.out.printf("Pending clone length: %d\n", pendingClone.size());
 
-    //         // NOTE: For testing
-    //         try {
-    //             TimeUnit.SECONDS.sleep(2);
-    //         } catch (InterruptedException ex) {
-    //             System.out.printf("Sleep exception: %s\n", ex);
-    //         }
+            // // NOTE: For testing
+            // try {
+            //     TimeUnit.SECONDS.sleep(2);
+            // } catch (InterruptedException ex) {
+            //     System.out.printf("Sleep exception: %s\n", ex);
+            // }
 
-    //         for (Message m: pendingClone) {
-    //             // If majority hosts for m and m not delivered, deliver
-    //             System.out.printf("Message m: %s\n", m);
-    //             System.out.printf("Can Deliver?: %s\n", canDeliver(m));
-    //             System.out.printf("Is Message Delivered?: %s\n", Messages.isMessageInList(m, delivered));
-    //             if (canDeliver(m) && !Messages.isMessageInList(m, delivered)) {
-    //                 deliver(m);
-    //             }
-    //         }
-    //     }
-    // }
+            for (Message m: pendingClone) {
+                // If majority hosts for m and m not delivered, deliver
+                // System.out.printf("Message m: %s\n", m);
+                // System.out.printf("Can Deliver?: %s\n", canDeliver(m));
+                // System.out.printf("Is Message Delivered?: %s\n", Messages.isMessageInList(m, delivered));
+                if (canDeliver(m) && !Messages.isMessageInList(m, delivered)) {
+                    deliver(m);
+                }
+            }
+        }
+    }
 
+    public void setMyEventListener (MyEventListener listener) {
+        this.listener = listener;
+    }
+    
     /**
      * On beb deliver, add m to ack.
      * If m not in pending, add to pending and beb broadcast
@@ -157,9 +137,14 @@ public class UniformBroadcast implements MyEventListener {
     }
 
     @Override
-    public void plDeliver(Host p, Message m) {
+    public void plDeliver(Host h, Message m) {
         // TODO Auto-generated method stub
-        
+    }
+
+    @Override
+    public void ubDeliver(Host h, Message m) {
+        // TODO Auto-generated method stub
+        listener.ubDeliver(h, m);
     }
 
     public static void writeDeliver(Message m) {

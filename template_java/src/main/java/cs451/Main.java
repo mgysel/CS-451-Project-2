@@ -65,7 +65,7 @@ public class Main {
         });
     }
 
-    private static void initSignalHandlers(LocalizedCausalBroadcast lcv, String filename) {
+    private static void initSignalHandlers(LocalizedCausalBroadcast lcb, String filename) {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
@@ -117,7 +117,7 @@ public class Main {
                 }
             }
         }
-
+        
         return configs;
     }
 
@@ -209,11 +209,11 @@ public class Main {
         //     System.out.println(host.toString());
         // }
 
-
         System.out.println("Doing some initialization\n");
         PerfectLinks pl = new PerfectLinks(bConfig);
         BestEffortBroadcast beb = new BestEffortBroadcast(pl, bConfig);
         UniformBroadcast ub = new UniformBroadcast(beb, bConfig);
+        LocalizedCausalBroadcast lcb = new LocalizedCausalBroadcast(ub, bConfig);
         // initSignalHandlers(pl, parser.output());
         // initSignalHandlers(beb, parser.output());
         initSignalHandlers(ub, parser.output());
@@ -229,7 +229,9 @@ public class Main {
         // fifo.broadcast();
         pl.start();
         // beb.broadcastAll();
-        ub.broadcastAll();
+        // ub.broadcastAll();
+        ub.start();
+
 
         // *********************************************************************
 
