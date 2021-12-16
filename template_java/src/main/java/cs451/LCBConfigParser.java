@@ -24,6 +24,7 @@ public class LCBConfigParser {
             int lineNum = 1;
             int M = 0;
             for(String line; (line = br.readLine()) != null; lineNum++) {
+                System.out.printf("Line %d: %s\n", lineNum, line);
                 if (line.isBlank()) {
                     continue;
                 }

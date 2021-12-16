@@ -85,7 +85,9 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
     @Override
     public void plDeliver(Host h, Message m) {
         deliver(h, m);
-        listener.bebDeliver(h, m);
+        if (listener != null) {
+            listener.bebDeliver(h, m);
+        }
     }
 
     @Override
