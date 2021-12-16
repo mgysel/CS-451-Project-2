@@ -42,7 +42,7 @@ public class PerfectLinks extends Thread implements MyEventListener {
         InetSocketAddress address = dest.getAddress();
         String content = m.toString();
 
-        // // NOTE: For testing
+        // NOTE: For testing
         // try {
         //     TimeUnit.SECONDS.sleep(1);
         // } catch (InterruptedException ex) {
@@ -81,7 +81,7 @@ public class PerfectLinks extends Thread implements MyEventListener {
         Host from = hosts.getHostByAddress(packet.getAddress(), packet.getPort());
         String received = new String(packet.getData(), packet.getOffset(), packet.getLength()).trim();
         Message message = new Message(received, hosts, me);
-        System.out.printf("\n***** PL RECEIVED - %s\n", message.toString());
+        // System.out.printf("\n***** PL RECEIVED - %s\n", message.toString());
         if (message.getType() == MessageType.BROADCAST) {
             deliver(from, message);
             // Send ack back, even if already delivered
@@ -103,7 +103,7 @@ public class PerfectLinks extends Thread implements MyEventListener {
     */
     public void run() {
         running = true;
-        
+
         // Send messages until we receive all acks
         while (running) {
             ConcurrentHashMap<Host, ArrayList<Message>> messagesClone = Messages.getMapClone(messages);

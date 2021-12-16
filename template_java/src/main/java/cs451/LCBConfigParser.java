@@ -55,7 +55,7 @@ public class LCBConfigParser {
                     int i = 1;
                     while (i < splits.length) {
                         try {
-                            int dependency = Integer.parseInt(splits[0]);
+                            int dependency = Integer.parseInt(splits[i]);
                             dependencies.add(dependency);
                         } catch (NumberFormatException e) {
                             System.err.println("Id and m in the hosts file must be an integer!");
