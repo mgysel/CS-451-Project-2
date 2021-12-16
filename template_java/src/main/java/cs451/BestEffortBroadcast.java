@@ -14,6 +14,9 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
 
     private static String output;
     private int M;
+
+    // ***** For Testing
+    private int numDelivered = 0;
     
     public BestEffortBroadcast(PerfectLinks pl, BroadcastConfig bConfig) {
         this.pl = pl;
@@ -57,6 +60,9 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
         if (Messages.addMessageToMap(src, m, delivered)) {
             // System.out.println("Writing deliver");
             writeDeliver(src, m);
+            
+            // ***** TODO - FOR TESTING
+            numDelivered++;
         }
     }
 
@@ -93,6 +99,8 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
     }
 
     public String close() {
+        System.out.printf("BEB - numDelivered: %d\n", numDelivered);
+        
         pl.close();
         return output;
     }

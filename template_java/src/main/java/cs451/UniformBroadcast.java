@@ -23,6 +23,9 @@ public class UniformBroadcast extends Thread implements MyEventListener {
 
     private static final ReentrantReadWriteLock outputLock = new ReentrantReadWriteLock();
 
+    // ***** For Testing
+    private int numDelivered = 0;
+
     public UniformBroadcast(BestEffortBroadcast beb, BroadcastConfig bConfig)  {
         this.bConfig = bConfig;
         this.beb = beb;
@@ -71,6 +74,10 @@ public class UniformBroadcast extends Thread implements MyEventListener {
         // System.out.println("ub - deliver");
         writeDeliver(m);
         Messages.addMessageToList(m, UniformBroadcast.delivered);
+
+        // ***** TODO - For Testing
+        numDelivered++;
+        // System.out.printf("UB - numDelivered: %d\n", numDelivered);
     }
 
     private boolean canDeliver(Message m) {
@@ -166,6 +173,8 @@ public class UniformBroadcast extends Thread implements MyEventListener {
     }
 
     public String close() {
+        System.out.printf("UB - numDelivered: %d\n", numDelivered);
+
         beb.close();
         running = false;
         return output;

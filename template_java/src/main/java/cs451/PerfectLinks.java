@@ -17,6 +17,9 @@ public class PerfectLinks extends Thread implements MyEventListener {
     private MyEventListener listener; 
     private boolean running;
 
+    private int numDelivered = 0;
+    private int numSent = 0;
+
     public PerfectLinks(BroadcastConfig bConfig) {
         this.me = bConfig.getMe();
         this.configs = bConfig.getConfigs();
@@ -53,8 +56,11 @@ public class PerfectLinks extends Thread implements MyEventListener {
         if (udp.send(address, content)) {
             // If broadcast m, update messages map
             if (m.getType() == MessageType.BROADCAST) {
-                Messages.addMessageToMap(dest, m, messages);
+                Messages.addMessageToMap(dest, m, PerfectLinks.messages);
             }
+            // ***** For Testing
+            numSent++;
+
             return true;
         }
 
@@ -67,8 +73,11 @@ public class PerfectLinks extends Thread implements MyEventListener {
      * @param m
      */
     private void deliver(Host src, Message m) {
-        if (Messages.addMessageToMap(src, m, delivered)) {
+        if (Messages.addMessageToMap(src, m, PerfectLinks.delivered)) {
             listener.plDeliver(src, m);
+            
+            // ***** For Testing
+            numDelivered++;
         }
     }
 
@@ -90,8 +99,9 @@ public class PerfectLinks extends Thread implements MyEventListener {
         } else if (message.getType() == MessageType.ACK) {
             // Process ACK - Remove from messages, add to delivered
             Message m = new Message(MessageType.BROADCAST, message.getSequenceNumber(), message.getFrom(), message.getContent(), message.getVC());
-            Messages.removeMessageFromMap(from, m, messages);
-            Messages.addMessageToMap(from, m, delivered);
+            // Remove from messages
+            Messages.removeMessageFromMap(from, m, PerfectLinks.messages);
+            deliver(me, m);
         } else {
             System.out.println("***** Not proper messages sent");
             System.out.printf("Message: %s\n", received);
@@ -129,6 +139,14 @@ public class PerfectLinks extends Thread implements MyEventListener {
         udp.setRunning(false);
         udp.socket.close();
         running = false;
+
+        // ***** For Testing
+        System.out.printf("PL - numSent: %d\n", numSent);
+        System.out.printf("PL - numDelivered: %d\n", numDelivered);
+        System.out.printf("PL - length of Messages: %d\n", PerfectLinks.messages.size());
+        System.out.printf("PL - length of Delivered: %d\n", PerfectLinks.delivered.size());
+        System.out.println("***** PL - List of messages");
+        Messages.printHostMessageMap(PerfectLinks.messages);
     }
 
     public List<LCBConfig> getConfigs() {
