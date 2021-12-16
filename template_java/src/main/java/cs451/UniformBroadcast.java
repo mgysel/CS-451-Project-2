@@ -10,6 +10,8 @@ public class UniformBroadcast extends Thread implements MyEventListener {
     BroadcastConfig bConfig;
     private static String output;
 
+    private boolean running;
+
     private MyEventListener listener; 
 
     // Stores messages beb-delivered but not urb-delivered
@@ -25,6 +27,8 @@ public class UniformBroadcast extends Thread implements MyEventListener {
         this.bConfig = bConfig;
         this.beb = beb;
         this.beb.setMyEventListener(this);
+
+        this.running = false;
 
         UniformBroadcast.pending = new ArrayList<Message>();
         UniformBroadcast.ack = new ConcurrentHashMap<Message, ArrayList<Host>>();
@@ -83,7 +87,9 @@ public class UniformBroadcast extends Thread implements MyEventListener {
     */
     public void run() {
         System.out.println("Inside ub run");
-        while (true) {
+
+        running = true;
+        while (running) {
             // System.out.println("Inside run - whileLoop");
             // Loop through pending messages
             ArrayList<Message> pendingClone = Messages.getListClone(pending);
@@ -161,6 +167,7 @@ public class UniformBroadcast extends Thread implements MyEventListener {
 
     public String close() {
         beb.close();
+        running = false;
         return output;
     }
 }

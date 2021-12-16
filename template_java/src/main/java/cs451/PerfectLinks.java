@@ -15,6 +15,7 @@ public class PerfectLinks extends Thread implements MyEventListener {
     static ConcurrentHashMap<Host, ArrayList<Message>> messages;
     static ConcurrentHashMap<Host, ArrayList<Message>> delivered;
     private MyEventListener listener; 
+    private boolean running;
 
     public PerfectLinks(BroadcastConfig bConfig) {
         this.me = bConfig.getMe();
@@ -23,6 +24,7 @@ public class PerfectLinks extends Thread implements MyEventListener {
         
         this.udp = new UDP(me, this);
         this.udp.start();
+        this.running = false;
 
         PerfectLinks.messages = new ConcurrentHashMap<Host, ArrayList<Message>>();
         PerfectLinks.delivered = new ConcurrentHashMap<Host, ArrayList<Message>>();
@@ -100,8 +102,10 @@ public class PerfectLinks extends Thread implements MyEventListener {
     * Send all unacked packets
     */
     public void run() {
+        running = true;
+        
         // Send messages until we receive all acks
-        while (true) {
+        while (running) {
             ConcurrentHashMap<Host, ArrayList<Message>> messagesClone = Messages.getMapClone(messages);
 
             // For Host in config (including me)
@@ -124,6 +128,7 @@ public class PerfectLinks extends Thread implements MyEventListener {
     public void close() {
         udp.setRunning(false);
         udp.socket.close();
+        running = false;
     }
 
     public List<LCBConfig> getConfigs() {
