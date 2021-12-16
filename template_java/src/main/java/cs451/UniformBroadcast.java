@@ -53,7 +53,7 @@ public class UniformBroadcast extends Thread implements MyEventListener {
 
     // Broadcast
     public void broadcast(Message m) {
-        System.out.println("ub - broadcast");
+        // System.out.println("ub - broadcast");
         
         // Add m to pending
         Messages.addMessageToList(m, UniformBroadcast.pending);
@@ -74,7 +74,7 @@ public class UniformBroadcast extends Thread implements MyEventListener {
     }
 
     private boolean canDeliver(Message m) {
-        if (Messages.isMajorityInMap(bConfig.getHosts().getHosts().size(), m, ack)) {
+        if (Messages.isMajorityInMap(bConfig.getHosts().getHosts().size(), m, UniformBroadcast.ack)) {
             // System.out.println("CAN DELIVER");
             return true;
         }
@@ -92,7 +92,7 @@ public class UniformBroadcast extends Thread implements MyEventListener {
         while (running) {
             // System.out.println("Inside run - whileLoop");
             // Loop through pending messages
-            ArrayList<Message> pendingClone = Messages.getListClone(pending);
+            ArrayList<Message> pendingClone = Messages.getListClone(UniformBroadcast.pending);
             // System.out.printf("Pending clone length: %d\n", pendingClone.size());
 
             // // NOTE: For testing
@@ -107,7 +107,7 @@ public class UniformBroadcast extends Thread implements MyEventListener {
                 // System.out.printf("Message m: %s\n", m);
                 // System.out.printf("Can Deliver?: %s\n", canDeliver(m));
                 // System.out.printf("Is Message Delivered?: %s\n", Messages.isMessageInList(m, delivered));
-                if (canDeliver(m) && !Messages.isMessageInList(m, delivered)) {
+                if (canDeliver(m) && !Messages.isMessageInList(m, UniformBroadcast.delivered)) {
                     deliver(m);
                     listener.ubDeliver(m.getFrom(), m);
                 }
@@ -132,11 +132,11 @@ public class UniformBroadcast extends Thread implements MyEventListener {
         // System.out.printf("Host: %s\n", h.toString());
         
         // Add message to ack
-        Messages.addHostToMap(h, m, ack);
+        Messages.addHostToMap(h, m, UniformBroadcast.ack);
         // Messages.printMessageHostMap(ack);
         
         // If not in pending, add to pending
-        if (Messages.addMessageToList(m, pending)) {
+        if (Messages.addMessageToList(m, UniformBroadcast.pending)) {
             // If not in pending, Broadcast
             beb.broadcast(m);
         }
