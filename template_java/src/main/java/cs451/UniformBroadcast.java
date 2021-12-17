@@ -23,10 +23,6 @@ public class UniformBroadcast extends Thread implements MyEventListener {
 
     private static final ReentrantReadWriteLock outputLock = new ReentrantReadWriteLock();
 
-    // ***** For Testing
-    private int numDelivered = 0;
-    private int receivedBEBDeliver = 0;
-
     public UniformBroadcast(BestEffortBroadcast beb, BroadcastConfig bConfig)  {
         this.bConfig = bConfig;
         this.beb = beb;
@@ -79,10 +75,6 @@ public class UniformBroadcast extends Thread implements MyEventListener {
         // System.out.println("ub - deliver");
         writeDeliver(m);
         Messages.addMessageToList(m, UniformBroadcast.delivered);
-
-        // ***** TODO - For Testing
-        numDelivered++;
-        // System.out.printf("UB - numDelivered: %d\n", numDelivered);
     }
 
     /**
@@ -108,13 +100,6 @@ public class UniformBroadcast extends Thread implements MyEventListener {
             // Loop through pending messages
             ArrayList<Message> pendingClone = Messages.getListClone(UniformBroadcast.pending);
 
-            // // NOTE: For testing
-            // try {
-            //     TimeUnit.SECONDS.sleep(2);
-            // } catch (InterruptedException ex) {
-            //     System.out.printf("Sleep exception: %s\n", ex);
-            // }
-
             for (Message m: pendingClone) {
                 // If majority hosts for m and m not delivered, deliver
                 if (canDeliver(m) && !Messages.isMessageInList(m, UniformBroadcast.delivered)) {
@@ -139,9 +124,6 @@ public class UniformBroadcast extends Thread implements MyEventListener {
      */
     @Override
     public void bebDeliver(Host h, Message m) {
-        // ***** TODO - For Testing
-        receivedBEBDeliver++;
-
         // Add message to ack
         Messages.addHostToMap(h, m, UniformBroadcast.ack);
         
@@ -186,10 +168,6 @@ public class UniformBroadcast extends Thread implements MyEventListener {
     }
 
     public String close() {
-        // ***** TODO - For Testing
-        System.out.printf("UB - numDelivered: %d\n", numDelivered);
-        System.out.printf("UB - receivedBEBDeliver: %d\n", receivedBEBDeliver);
-
         running = false;
         beb.close();
         return output;

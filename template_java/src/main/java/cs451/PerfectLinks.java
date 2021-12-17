@@ -17,10 +17,6 @@ public class PerfectLinks extends Thread implements MyEventListener {
     private MyEventListener listener; 
     private boolean running;
 
-    // ***** TODO - For Testing
-    private int numDelivered = 0;
-    private int numSent = 0;
-
     public PerfectLinks(BroadcastConfig bConfig) {
         this.me = bConfig.getMe();
         this.configs = bConfig.getConfigs();
@@ -59,8 +55,6 @@ public class PerfectLinks extends Thread implements MyEventListener {
             if (m.getType() == MessageType.BROADCAST) {
                 Messages.addMessageToMap(dest, m, PerfectLinks.messages);
             }
-            // ***** TODO - For Testing
-            numSent++;
 
             return true;
         }
@@ -76,8 +70,6 @@ public class PerfectLinks extends Thread implements MyEventListener {
         if (listener != null) {
             if (Messages.addMessageToMap(src, m, PerfectLinks.delivered)) {
                 listener.plDeliver(src, m);
-                // ***** For Testing
-                numDelivered++;
             }
         }
     }
@@ -142,12 +134,6 @@ public class PerfectLinks extends Thread implements MyEventListener {
         running = false;
         udp.setRunning(false);
         udp.socket.close();
-
-        // ***** For Testing
-        System.out.printf("PL - numSent: %d\n", numSent);
-        System.out.printf("PL - numDelivered: %d\n", numDelivered);
-        System.out.printf("PL - length of Messages: %d\n", PerfectLinks.messages.size());
-        System.out.printf("PL - length of Delivered: %d\n", PerfectLinks.delivered.size());
     }
 
     public List<LCBConfig> getConfigs() {

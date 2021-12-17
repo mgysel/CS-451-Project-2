@@ -23,10 +23,6 @@ public class LocalizedCausalBroadcast extends Thread implements MyEventListener 
 
     private String output;
     private static final ReentrantReadWriteLock outputLock = new ReentrantReadWriteLock();
-
-    // ***** TODO - For Testing
-    private int numDelivered = 0;
-    private int receivedUBDeliver = 0;
     
     public LocalizedCausalBroadcast(UniformBroadcast ub, BroadcastConfig bConfig)  {
         this.ub = ub;
@@ -84,9 +80,6 @@ public class LocalizedCausalBroadcast extends Thread implements MyEventListener 
      */
     public void deliver(Message m) {
         writeDeliver(m);
-
-        // ***** TODO - For Testing
-        numDelivered++;
     }
 
     /**
@@ -238,9 +231,6 @@ public class LocalizedCausalBroadcast extends Thread implements MyEventListener 
      */
     @Override
     public void ubDeliver(Host h, Message m) {
-        // ***** TODO - For Testing
-        receivedUBDeliver++;
-        
         // Add m to pending
         Messages.addMessageToList(m, pending);
     }
@@ -292,10 +282,6 @@ public class LocalizedCausalBroadcast extends Thread implements MyEventListener 
     }
 
     public String close() {
-        // ***** TODO - For Testing
-        System.out.printf("LCB - numDelivered: %d\n", numDelivered);
-        System.out.printf("LCB - receivedUBDeliver: %d\n", receivedUBDeliver);
-
         running = false;
         ub.close();
         
