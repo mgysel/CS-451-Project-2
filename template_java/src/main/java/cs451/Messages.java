@@ -63,7 +63,6 @@ public class Messages {
                 ArrayList<Host> hostList = entry.getValue();
                 // If m does not have any hosts, create new host list
                 if (hostList == null) {
-                    System.out.println("hostList is null");
                     ArrayList<Host> newHostList = new ArrayList<Host>();
                     newHostList.add(h);
                     
@@ -101,6 +100,13 @@ public class Messages {
         return true;
     }
 
+    /**
+     * Checks if message m is in host-message map
+     * @param h
+     * @param m
+     * @param map
+     * @return
+     */
     public static Message isMessageInMap(Host h, Message m, ConcurrentHashMap<Host, ArrayList<Message>> map) {
         Message msg = null;
 
@@ -119,6 +125,12 @@ public class Messages {
         return msg;
     }
 
+    /**
+     * Checks if message in list
+     * @param m
+     * @param list
+     * @return
+     */
     public static boolean isMessageInList(Message m, ArrayList<Message> list) {
         readLock.lock();
         for (Message message: list) {
@@ -131,6 +143,13 @@ public class Messages {
         return false;
     }
 
+    /**
+     * Removes message m from host-message map
+     * @param h
+     * @param m
+     * @param map
+     * @return
+     */
     public static boolean removeMessageFromMap(Host h, Message m, ConcurrentHashMap<Host, ArrayList<Message>> map) {
         readLock.lock();
         ArrayList<Message> msgList = map.get(h);
@@ -173,6 +192,11 @@ public class Messages {
         return mapClone;
     }
 
+    /**
+     * Gets clone of message list
+     * @param list
+     * @return
+     */
     public static ArrayList<Message> getListClone(ArrayList<Message> list) {
         ArrayList<Message> listClone = new ArrayList<Message>();
         readLock.lock();
@@ -185,6 +209,12 @@ public class Messages {
         return listClone;
     }
 
+    /**
+     * Adds message m to message list
+     * @param m
+     * @param list
+     * @return
+     */
     public static boolean addMessageToList(Message m, ArrayList<Message> list) {
         readLock.lock();
         int index = list.indexOf(m);
@@ -221,6 +251,13 @@ public class Messages {
         return false;
     }
 
+    /**
+     * Checks if received ack for majority of hosts in message-host map
+     * @param numHosts
+     * @param m
+     * @param map
+     * @return
+     */
     public static boolean isMajorityInMap(int numHosts, Message m, ConcurrentHashMap<Message, ArrayList<Host>> map) {
         readLock.lock();
         for (ConcurrentHashMap.Entry<Message, ArrayList<Host>> entry : map.entrySet()) {
@@ -248,7 +285,7 @@ public class Messages {
     }
 
     /**
-     * Prints a map - useful for debugging
+     * Prints a host-message map - useful for debugging
      * @param map
      */
     public static void printHostMessageMap(ConcurrentHashMap<Host, ArrayList<Message>> map) {
@@ -267,7 +304,7 @@ public class Messages {
     }
 
     /**
-     * Prints a map - useful for debugging
+     * Prints a message-host map - useful for debugging
      * @param map
      */
     public static void printMessageHostMap(ConcurrentHashMap<Message, ArrayList<Host>> map) {
@@ -285,8 +322,8 @@ public class Messages {
         readLock.unlock();
     }
 
-        /**
-     * Prints a map - useful for debugging
+    /**
+     * Prints a message list - useful for debugging
      * @param map
      */
     public static void printMessageList(ArrayList<Message> list) {

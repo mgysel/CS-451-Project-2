@@ -42,7 +42,7 @@ public class UDP extends Thread {
             DatagramPacket packet = new DatagramPacket(buf, buf.length, dest);
             socket.send(packet);
         } catch(IOException e) {
-            System.out.println("Client.Send IOException Error: " + e);
+            // System.out.println("Client.Send IOException Error: " + e);
             return false;
         } catch (IllegalArgumentException e) {
             System.out.printf("OutBuf: %s\n", buf.toString());

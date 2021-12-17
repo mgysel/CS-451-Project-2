@@ -17,9 +17,6 @@ public class PerfectLinks extends Thread implements MyEventListener {
     private MyEventListener listener; 
     private boolean running;
 
-    private int numDelivered = 0;
-    private int numSent = 0;
-
     public PerfectLinks(BroadcastConfig bConfig) {
         this.me = bConfig.getMe();
         this.configs = bConfig.getConfigs();
@@ -58,12 +55,8 @@ public class PerfectLinks extends Thread implements MyEventListener {
             if (m.getType() == MessageType.BROADCAST) {
                 Messages.addMessageToMap(dest, m, PerfectLinks.messages);
             }
-            // ***** For Testing
-            numSent++;
-
             return true;
         }
-
         return false;
     }
 
@@ -75,9 +68,6 @@ public class PerfectLinks extends Thread implements MyEventListener {
     private void deliver(Host src, Message m) {
         if (Messages.addMessageToMap(src, m, PerfectLinks.delivered)) {
             listener.plDeliver(src, m);
-            
-            // ***** For Testing
-            numDelivered++;
         }
     }
 
@@ -138,17 +128,9 @@ public class PerfectLinks extends Thread implements MyEventListener {
      * @return output
      */
     public void close() {
+        running = false;
         udp.setRunning(false);
         udp.socket.close();
-        running = false;
-
-        // ***** For Testing
-        System.out.printf("PL - numSent: %d\n", numSent);
-        System.out.printf("PL - numDelivered: %d\n", numDelivered);
-        System.out.printf("PL - length of Messages: %d\n", PerfectLinks.messages.size());
-        System.out.printf("PL - length of Delivered: %d\n", PerfectLinks.delivered.size());
-        System.out.println("***** PL - List of messages");
-        Messages.printHostMessageMap(PerfectLinks.messages);
     }
 
     public List<LCBConfig> getConfigs() {
@@ -173,16 +155,16 @@ public class PerfectLinks extends Thread implements MyEventListener {
 
     @Override
     public void plDeliver(Host src, Message m) {
-        // System.out.println("Caught the delivery");
+        // Nothing
     }
     
     @Override
     public void bebDeliver(Host p, Message m) {
-        // TODO Auto-generated method stub
+        // Nothing
     }
 
     @Override
     public void ubDeliver(Host p, Message m) {
-        // TODO Auto-generated method stub
+        // Nothing
     }
 }

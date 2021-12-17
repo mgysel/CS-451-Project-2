@@ -47,28 +47,25 @@ public class LocalizedCausalBroadcast extends Thread implements MyEventListener 
                 break;
             }
         }
-
-        System.out.printf("Dependencies: %s\n", writeDependencies(dependencies));
     }
 
     /**
      * Broadcast all messages
     */
     public void broadcastAll() {
-        System.out.println("Inside Broadcast All");
         int i = 1;
         while (i <= bConfig.getM()) {
             Message m = new Message(MessageType.BROADCAST, i, bConfig.getMe(), Integer.toString(i), getDependenciesVCClone());
-            // System.out.printf("Message: %s\n", m.toString());
             broadcast(m);
             i += 1;
         }
     }
 
-    // Broadcast
+    /**
+     * LCB Broadcast
+     * @param m
+     */
     public void broadcast(Message m) {
-        // System.out.println("\n***** LCB - Broadcast");
-
         // Trigger ub Broadcast
         ub.broadcast(m);
         // Increase my vector after broadcast m
@@ -77,11 +74,18 @@ public class LocalizedCausalBroadcast extends Thread implements MyEventListener 
         
     }
 
+    /**
+     * Deliver m
+     * @param m
+     */
     public void deliver(Message m) {
-        // System.out.println("\n***** LCB - Deliver");
         writeDeliver(m);
     }
 
+    /**
+     * Increments vector clock for host h
+     * @param h
+     */
     private void incVectorClock(Host h) {
         readLock.lock();
         int thisVC = this.VC.get(h.getId() - 1);
@@ -92,15 +96,14 @@ public class LocalizedCausalBroadcast extends Thread implements MyEventListener 
         writeLock.unlock();
     }
 
+    /**
+     * Iterates through pending messages and delivers
+     */
     public void run() {
-        System.out.println("***** LCB - Inside run");
-        Messages.printMessageList(pending);
-        
         running = true;
         while (running) {
             // Loop through every message in pending
             ArrayList<Message> pendingClone = Messages.getListClone(pending);
-            // System.out.printf("Pending Length: %d\n", pendingClone.size());
             for (Message m: pendingClone) {
                 boolean canDeliver = true;
 
@@ -128,7 +131,6 @@ public class LocalizedCausalBroadcast extends Thread implements MyEventListener 
                     }
                 }
 
-
                 if (canDeliver) {
                     // Remove m from pending
                     Messages.removeMessageFromList(m, pending);
@@ -148,6 +150,10 @@ public class LocalizedCausalBroadcast extends Thread implements MyEventListener 
         }
     }
 
+    /**
+     * Returns a clone of vector clock
+     * @return
+     */
     public ArrayList<Integer> getVCClone() {
         ArrayList<Integer> VCClone = new ArrayList<Integer>();
         for (int i=0; i<VC.size(); i++) {
@@ -157,6 +163,10 @@ public class LocalizedCausalBroadcast extends Thread implements MyEventListener 
         return VCClone;
     }
 
+    /**
+     * Returns a clone of vector clock that removes non-dependencies
+     * @return
+     */
     public ArrayList<Integer> getDependenciesVCClone() {
         ArrayList<Integer> VCClone = new ArrayList<Integer>();
         for (int i=0; i<VC.size(); i++) {
@@ -172,6 +182,11 @@ public class LocalizedCausalBroadcast extends Thread implements MyEventListener 
         return VCClone;
     }
 
+    /**
+     * Writes vector clock to string - useful for debugging
+     * @param vc
+     * @return
+     */
     public String writeVectorClock(ArrayList<Integer> vc) {
         String vcString = "[";
         for (int i=0; i < vc.size(); i++) {
@@ -184,6 +199,11 @@ public class LocalizedCausalBroadcast extends Thread implements MyEventListener 
         return vcString;
     }
 
+    /**
+     * Writes dependencies vector clock to string - useful for debugging
+     * @param d
+     * @return
+     */
     public String writeDependencies(List<Integer> d) {
         String vcString = "[";
         for (int i=0; i < d.size(); i++) {
@@ -198,43 +218,27 @@ public class LocalizedCausalBroadcast extends Thread implements MyEventListener 
 
     @Override
     public void plDeliver(Host h, Message m) {
-        // TODO Auto-generated method stub
+        // Nothing
     }
 
     @Override
     public void bebDeliver(Host h, Message m) {
-        // TODO Auto-generated method stub
+        // Nothing
     }
 
+    /**
+     * When receiving UniformBroadcast deliver event, add to pending
+     */
     @Override
     public void ubDeliver(Host h, Message m) {
-        // System.out.println("\n***** LCB - Inside ubDeliver");
-        
         // Add m to pending
         Messages.addMessageToList(m, pending);
     }
 
-    public void writeDeliver(Message m) {
-        outputLock.writeLock().lock();
-        output = String.format("%sd %s %s\n", output, m.getFrom().getId(), m.getContent());
-        
-        // // ***** For testing
-        // // output += "Vector Clock D: ";
-        // // output = String.format("%s%s\n", output, writeVectorClock(getDependenciesVCClone()));
-        // output += "Vector Clock B: ";
-        // ArrayList<Integer> thisVCClone = getVCClone();
-        // thisVCClone.set(m.getFrom().getId() - 1, thisVCClone.get(m.getFrom().getId() - 1) - 1);
-        // output = String.format("%s%s\n", output, writeVectorClock(thisVCClone));
-        // output += "Vector Clock M: ";
-        // output = String.format("%s%s\n", output, writeVectorClock(m.getVC()));
-        // output += "Vector Clock A: ";
-        // output = String.format("%s%s\n", output, writeVectorClock(getVCClone()));
-        // output += "Vector Clock D: ";
-        // output = String.format("%s%s\n", output, writeVectorClock(getDependenciesVCClone()));
-
-        outputLock.writeLock().unlock();
-    }
-
+        /**
+     * Write broadcast event to output
+     * @param m
+     */
     public void writeBroadcast(Message m) {
         outputLock.writeLock().lock();
         output = String.format("%sb %s\n", output, m.getContent());
@@ -254,9 +258,33 @@ public class LocalizedCausalBroadcast extends Thread implements MyEventListener 
         outputLock.writeLock().unlock();
     }
 
+    /**
+     * Write deliver event to output
+     * @param m
+     */
+    public void writeDeliver(Message m) {
+        outputLock.writeLock().lock();
+        output = String.format("%sd %s %s\n", output, m.getFrom().getId(), m.getContent());
+        
+        // // ***** For testing
+        // output += "Vector Clock B: ";
+        // ArrayList<Integer> thisVCClone = getVCClone();
+        // thisVCClone.set(m.getFrom().getId() - 1, thisVCClone.get(m.getFrom().getId() - 1) - 1);
+        // output = String.format("%s%s\n", output, writeVectorClock(thisVCClone));
+        // output += "Vector Clock M: ";
+        // output = String.format("%s%s\n", output, writeVectorClock(m.getVC()));
+        // output += "Vector Clock A: ";
+        // output = String.format("%s%s\n", output, writeVectorClock(getVCClone()));
+        // output += "Vector Clock D: ";
+        // output = String.format("%s%s\n", output, writeVectorClock(getDependenciesVCClone()));
+
+        outputLock.writeLock().unlock();
+    }
+
     public String close() {
-        ub.close();
         running = false;
+        ub.close();
+        
         return output;
     }
 }

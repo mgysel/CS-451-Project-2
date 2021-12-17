@@ -23,8 +23,6 @@ public class UniformBroadcast extends Thread implements MyEventListener {
 
     private static final ReentrantReadWriteLock outputLock = new ReentrantReadWriteLock();
 
-    // ***** For Testing
-    private int numDelivered = 0;
 
     public UniformBroadcast(BestEffortBroadcast beb, BroadcastConfig bConfig)  {
         this.bConfig = bConfig;
@@ -44,20 +42,20 @@ public class UniformBroadcast extends Thread implements MyEventListener {
      * Broadcast all messages
     */
     public void broadcastAll() {
-        System.out.println("Inside Broadcast All");
+        // System.out.println("Inside Broadcast All");
         int i = 1;
         while (i <= bConfig.getM()) {
             Message m = new Message(MessageType.BROADCAST, i, bConfig.getMe(), Integer.toString(i), new ArrayList<Integer>());
-            // System.out.printf("Message: %s\n", m.toString());
             broadcast(m);
             i += 1;
         }
     }
 
-    // Broadcast
+    /**
+     * UniformBroadcast m
+     * @param m
+     */
     public void broadcast(Message m) {
-        // System.out.println("ub - broadcast");
-        
         // Add m to pending
         Messages.addMessageToList(m, UniformBroadcast.pending);
 
@@ -70,19 +68,23 @@ public class UniformBroadcast extends Thread implements MyEventListener {
         }
     }
 
+    /**
+     * Delivers m
+     * @param m
+     */
     public void deliver(Message m) {
         // System.out.println("ub - deliver");
         writeDeliver(m);
         Messages.addMessageToList(m, UniformBroadcast.delivered);
-
-        // ***** TODO - For Testing
-        numDelivered++;
-        // System.out.printf("UB - numDelivered: %d\n", numDelivered);
     }
 
+    /**
+     * Checks if m has received a majority of acks
+     * @param m
+     * @return
+     */
     private boolean canDeliver(Message m) {
         if (Messages.isMajorityInMap(bConfig.getHosts().getHosts().size(), m, UniformBroadcast.ack)) {
-            // System.out.println("CAN DELIVER");
             return true;
         }
 
@@ -90,17 +92,14 @@ public class UniformBroadcast extends Thread implements MyEventListener {
     }
 
     /**
-    * Check if messages can be delivered, deliver
-    */
+     * Loops through pending messages and delivers 
+     */
     public void run() {
-        System.out.println("Inside ub run");
 
         running = true;
         while (running) {
-            // System.out.println("Inside run - whileLoop");
             // Loop through pending messages
             ArrayList<Message> pendingClone = Messages.getListClone(UniformBroadcast.pending);
-            // System.out.printf("Pending clone length: %d\n", pendingClone.size());
 
             // // NOTE: For testing
             // try {
@@ -111,9 +110,6 @@ public class UniformBroadcast extends Thread implements MyEventListener {
 
             for (Message m: pendingClone) {
                 // If majority hosts for m and m not delivered, deliver
-                // System.out.printf("Message m: %s\n", m);
-                // System.out.printf("Can Deliver?: %s\n", canDeliver(m));
-                // System.out.printf("Is Message Delivered?: %s\n", Messages.isMessageInList(m, delivered));
                 if (canDeliver(m) && !Messages.isMessageInList(m, UniformBroadcast.delivered)) {
                     deliver(m);
                     listener.ubDeliver(m.getFrom(), m);
@@ -134,13 +130,8 @@ public class UniformBroadcast extends Thread implements MyEventListener {
      */
     @Override
     public void bebDeliver(Host h, Message m) {
-        // System.out.println("\n\n***** ub - received bebDeliver event");
-        // System.out.printf("Message: %s\n", m.toString());
-        // System.out.printf("Host: %s\n", h.toString());
-        
         // Add message to ack
         Messages.addHostToMap(h, m, UniformBroadcast.ack);
-        // Messages.printMessageHostMap(ack);
         
         // If not in pending, add to pending
         if (Messages.addMessageToList(m, UniformBroadcast.pending)) {
@@ -151,21 +142,31 @@ public class UniformBroadcast extends Thread implements MyEventListener {
 
     @Override
     public void plDeliver(Host h, Message m) {
-        // TODO Auto-generated method stub
+        // Nothing
     }
 
+    /**
+     * Send ubDeliver event to LCB
+     */
     @Override
     public void ubDeliver(Host h, Message m) {
-        // TODO Auto-generated method stub
         listener.ubDeliver(h, m);
     }
 
+    /**
+     * Writes deliver event to output
+     * @param m
+     */
     public static void writeDeliver(Message m) {
         outputLock.writeLock().lock();
         UniformBroadcast.output = String.format("%sd %s %s\n", UniformBroadcast.output, m.getFrom().getId(), m.getContent());
         outputLock.writeLock().unlock();
     }
 
+    /**
+     * Writes broadcast event to output
+     * @param m
+     */
     public static void writeBroadcast(Message m) {
         outputLock.writeLock().lock();
         UniformBroadcast.output = String.format("%sb %s\n", UniformBroadcast.output, m.getContent());
@@ -173,10 +174,8 @@ public class UniformBroadcast extends Thread implements MyEventListener {
     }
 
     public String close() {
-        System.out.printf("UB - numDelivered: %d\n", numDelivered);
-
-        beb.close();
         running = false;
+        beb.close();
         return output;
     }
 }

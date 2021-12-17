@@ -14,9 +14,6 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
 
     private static String output;
     private int M;
-
-    // ***** For Testing
-    private int numDelivered = 0;
     
     public BestEffortBroadcast(PerfectLinks pl, BroadcastConfig bConfig) {
         this.pl = pl;
@@ -29,20 +26,22 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
     }
 
     /**
-     * Broadcast all messages
+     * Broadcasts all messages
      */
     public void broadcastAll() {
         int i = 1;
         while (i <= M) {
             Message m = new Message(MessageType.BROADCAST, i, pl.getMe(), Integer.toString(i), new ArrayList<Integer>());
-            // System.out.printf("Message: %s\n", m.toString());
             broadcast(m);
             writeBroadcast(m);
             i += 1;
         }
     }
 
-    // Broadcast
+    /**
+     * Broadcasts m
+     * @param m
+     */
     public void broadcast(Message m) {
         // For all peers, pl.send(pi, m)
         List<Host> hosts = pl.getHosts().getHosts();
@@ -60,18 +59,24 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
         if (Messages.addMessageToMap(src, m, delivered)) {
             // System.out.println("Writing deliver");
             writeDeliver(src, m);
-            
-            // ***** TODO - FOR TESTING
-            numDelivered++;
         }
     }
 
+    /**
+     * Writes deliver event to output
+     * @param h
+     * @param m
+     */
     public static void writeDeliver(Host h, Message m) {
         outputLock.writeLock().lock();
         BestEffortBroadcast.output = String.format("%sd %s %s\n", BestEffortBroadcast.output, h.getId(), m.getContent());
         outputLock.writeLock().unlock();
     }
 
+    /**
+     * Writes broadcast event to output
+     * @param m
+     */
     public static void writeBroadcast(Message m) {
         outputLock.writeLock().lock();
         BestEffortBroadcast.output = String.format("%sb %s\n", BestEffortBroadcast.output, m.getContent());
@@ -82,6 +87,9 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
         this.listener = listener;
     }
 
+    /**
+     * Receives deliver event from PerfectLinks
+     */
     @Override
     public void plDeliver(Host h, Message m) {
         deliver(h, m);
@@ -92,17 +100,15 @@ public class BestEffortBroadcast extends Thread implements MyEventListener {
 
     @Override
     public void bebDeliver(Host h, Message m) {
-        // TODO Auto-generated method stub
+        // Nothing
     }
 
     @Override
     public void ubDeliver(Host h, Message m) {
-        // TODO Auto-generated method stub
+        // Nothing
     }
 
     public String close() {
-        System.out.printf("BEB - numDelivered: %d\n", numDelivered);
-        
         pl.close();
         return output;
     }

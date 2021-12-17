@@ -41,6 +41,7 @@ public class Main {
         //immediately stop network packet processing
         System.out.println("Immediately stopping network packet processing.");
         String output = lcb.close();
+        
 
         //write/flush output file if necessary
         System.out.println("Writing output.");
