@@ -119,7 +119,7 @@ public class PerfectLinks extends Thread implements MyEventListener {
 
         // Send messages until we receive all acks
         while (running) {
-            ConcurrentHashMap<Host, ArrayList<Message>> messagesClone = Messages.getMapClone(messages);
+            ConcurrentHashMap<Host, ArrayList<Message>> messagesClone = Messages.getMapClone(PerfectLinks.messages);
 
             // For Host in config (including me)
             for (Host host: hosts.getHosts()) {
