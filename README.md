@@ -1,6 +1,6 @@
 # Distributed Broadcast Algorithms
 
-## Overview
+# Overview
 This project was completed as part of EPFL's Distributed Algorithms course. The goal of the project is to implement the following building-blocks necessary for a decentralized system:
   - Perfect Links,
   - Best-effort Broadcast,
@@ -22,7 +22,6 @@ The application messages (i.e., those broadcast by processes) are numbered seque
 ### Template structure
 We provide you a template for both C/C++ and Java, which you should use in your project. The template has a certain structure that is explained below:
 
-#### For Java:
 ```sh
 .
 ├── bin
@@ -98,10 +97,10 @@ You are **strongly encouraged** to test the compilation of your code in the virt
 
 **Detailed instructions for submitting your project will be released soon.**
 
-### Execution
+## Execution
 We define several details for each algorithms below.
 
-#### Perfect Links application
+### Perfect Links application
   - The `CONFIG` command-line argument for this algorithm consists of a file that contains two integers `m i` in its first line. `m` defines how many messages each process should send. `i` is the index of the process that should receive the messages.
   Note that all processes, apart from `i`, send `m` messages each to process `i`.
   - Even though messages are not being broadcast, processes that send messages log them using the format `b`*`seq_nr`*.
@@ -125,7 +124,7 @@ We define several details for each algorithms below.
 # Of course, you will NOT find any output files after running this because there is nothing implemented now!
 ```
 
-#### FIFO Broadcast application
+### FIFO Broadcast application
   - You must implement this on top of uniform reliable broadcast (URB).
   - The `CONFIG` command-line argument for this algorithm consists of a file that contains an integer `m` in its first line. `m` defines how many messages each process should broadcast.
   - The following example builds and starts 3 processes (run from within the `template_cpp` or the `template_java` directory):
@@ -146,7 +145,7 @@ We define several details for each algorithms below.
 # Type Ctrl-C in every terminal window to create the output files.
 ```
 
-#### Localized Causal Broadcast
+### Localized Causal Broadcast
   - You must implement this on top of uniform reliable broadcast (URB).
   - The `CONFIG` command-line argument for this algorithm consists of a file that contains an integer `m` in its first line. `m` defines how many messages each process should broadcast.
   - For a system of `n` processes, there are `n` more lines in the `CONFIG` file. Each line `i` corresponds to process `i`, and such a line indicates the identities of other processes which can affect process `i`. See the example below.
@@ -188,7 +187,7 @@ We say that a process `x` is affected by a process `z` if all the messages which
 
 Note: Refer to the project slides on how to use the `stress.py` tool to easily run your project.
 
-### Limits
+## Limits
 The entire project implements abstractions that operate in the asynchronous model, i.e., there is no bound in processing and communication delays. However, during the evaluation of the projects we set a maximum execution time limit.
 In particular, for executions where:
 - the network is not delaying/dropping/reordering packets and
@@ -197,19 +196,3 @@ In particular, for executions where:
 we set the execution limit at 25 minutes.
 
 Implementations that do not broadcast and do not deliver all messages within 25 minutes are considered incorrect.
-
-### Cooperation
-This project is meant to be completed individually. Copying from others is prohibited. You are free (and encouraged) to discuss the projects with others, but the submitted source code must be the exclusive work yours. Multiple copies of the same code will be disregarded without investigating which is the "original" and which is the "copy". Furthermore, please give appropriate credit to pieces of code you found online (e.g. in stackoverflow).
-
-*Note*: code similarity tools will be used to check copying.
-
-### Grading
-This project accounts for 30% of the final grade and comprises three submissions:
-  - A runnable application implementing Perfect Links (10%),
-  - A runnable application implementing FIFO Broadcast (40%), and
-  - A runnable application implementing Localized Causal Broadcast (50%).
-
-Note that these submissions are *incremental*. This means that your work towards the first will help you in your work towards the second.
-
-First, if your submission does not compile or invalid, e.g., produces empty output files, it will NOT be graded.
-If your submission passes the initial validation, we will evaluate it based on two criteria: correctness and performance. We prioritize correctness: a correct implementation (i.e., that passes all the test cases) will receive (at least) a score of 4-out-of-6. The rest 2-out-of-6 is given based on the perfomance of your implementation compared to the perfomance of the implemantions submitted by your colleagues. The fastest correct implementation will receive a perfect score (6). Incorrect implementations receive a score below 4, depending on the number of tests they fail to pass.
